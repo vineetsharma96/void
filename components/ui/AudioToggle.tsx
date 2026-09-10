@@ -52,7 +52,7 @@ export function AudioToggle() {
 
   return (
     <div
-      className="fixed top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto font-mono select-none flex items-center gap-2"
+      className="fixed top-3 sm:top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto font-mono select-none flex items-center gap-1 sm:gap-2"
       onMouseEnter={() => setShowVolumeSlider(true)}
       onMouseLeave={() => setShowVolumeSlider(false)}
     >
@@ -60,7 +60,7 @@ export function AudioToggle() {
         onClick={handleToggle}
         aria-label={audioEnabled ? "Mute procedural audio synthesizer" : "Enable procedural audio synthesizer"}
         aria-pressed={audioEnabled}
-        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full border text-xs tracking-wider transition-all backdrop-blur-md focus-visible:ring-2 focus-visible:ring-amber-glow focus-visible:outline-none ${
+        className={`flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border text-[10px] sm:text-xs tracking-wider transition-all backdrop-blur-md focus-visible:ring-2 focus-visible:ring-amber-glow focus-visible:outline-none ${
           audioEnabled
             ? "bg-void-950/80 border-amber-glow/60 text-amber-glow shadow-[0_0_15px_rgba(229,169,60,0.2)]"
             : "bg-void-950/60 border-void-800 text-void-400 hover:text-void-200"
@@ -70,9 +70,9 @@ export function AudioToggle() {
         {audioEnabled ? (
           <>
             <Volume2 className="w-3.5 h-3.5 text-amber-glow" />
-            <span className="text-[10px] font-medium">AUDIO ON</span>
+            <span className="text-[10px] font-medium hidden sm:inline">AUDIO ON</span>
             {/* Live real-time AnalyserNode frequency spectrum bars */}
-            <div className="flex items-end gap-0.5 h-3.5 ml-1">
+            <div className="flex items-end gap-0.5 h-3.5 ml-0.5 sm:ml-1">
               <span
                 className="w-0.5 bg-amber-glow transition-all duration-75 rounded-t"
                 style={{ height: `${Math.max(2, bands[0] * 14)}px` }}
@@ -94,7 +94,7 @@ export function AudioToggle() {
         ) : (
           <>
             <VolumeX className="w-3.5 h-3.5 text-void-500" />
-            <span className="text-[10px]">SOUND OFF</span>
+            <span className="text-[10px] hidden sm:inline">SOUND OFF</span>
           </>
         )}
       </button>

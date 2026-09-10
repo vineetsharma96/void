@@ -21,19 +21,24 @@ export function ForestWorld() {
   const terrainMaterialRef = useRef<THREE.ShaderMaterial>(null);
   const sporesRef = useRef<THREE.Points>(null);
 
-  // 1. Generate Procedural Terrain
+  const isMobile =
+    typeof window !== "undefined" &&
+    (window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+
+  // 1. Generate Procedural Terrain (optimized subdivisions)
   const terrainGeometry = useMemo(() => {
+    const segments = isMobile ? 48 : quality === "ultra" ? 90 : quality === "high" ? 64 : 48;
     return ProceduralTerrainEngine.generateGeometry({
       width: 48,
       depth: 48,
-      segmentsX: quality === "ultra" ? 140 : quality === "high" ? 100 : 70,
-      segmentsZ: quality === "ultra" ? 140 : quality === "high" ? 100 : 70,
+      segmentsX: segments,
+      segmentsZ: segments,
       heightScale: 3.8,
       frequency: 0.055,
-      octaves: 4,
+      octaves: isMobile ? 3 : 4,
       seed,
     });
-  }, [seed, quality]);
+  }, [seed, quality, isMobile]);
 
   // Terrain Shader Material
   const terrainMaterial = useMemo(() => {
@@ -53,12 +58,12 @@ export function ForestWorld() {
   }, [seed]);
 
   // 2. Generate Procedural Tree Species & Canopy Groves
-  const { treeMeshes, allFoliageMatrices, totalFoliageCount } = useMemo(() => {
-    const treeCount = quality === "ultra" ? 22 : quality === "high" ? 16 : 10;
-    const trees: { geometry: THREE.BufferGeometry; position: [number, number, number]; rotationY: number }[] = [];
+  // Merged into a SINGLE static draw call to prevent mobile GPU stalls
+  const { mergedForestTrunks, allFoliageMatrices, totalFoliageCount } = useMemo(() => {
+    const treeCount = isMobile ? 5 : quality === "ultra" ? 12 : quality === "high" ? 8 : 5;
+    const trunkGeometries: THREE.BufferGeometry[] = [];
     const foliageMats: THREE.Matrix4[] = [];
 
-    // Deterministic placement on terrain surface
     for (let i = 0; i < treeCount; i++) {
       const angle = (i / treeCount) * Math.PI * 2;
       const radius = 4.5 + ((i * 137.5) % 14);
@@ -66,40 +71,84 @@ export function ForestWorld() {
       const z = Math.sin(angle) * radius;
       const y = ProceduralTerrainEngine.getHeight(x, z, { seed, heightScale: 3.8, frequency: 0.055 });
 
-      // Generate tree variation
       const treeData = ProceduralVegetationEngine.generateTree({
         seed: seed + i * 1009,
-        height: 3.8 + ((i * 37) % 2.5),
-        trunkRadius: 0.22 + ((i * 19) % 0.12),
-        branchingAngle: 0.52 + ((i * 23) % 0.18),
-        recursionDepth: 3,
-        branchesPerLevel: 3,
-        foliageDensity: quality === "low" ? 6 : 12,
+        height: 3.6 + ((i * 37) % 2.0),
+        trunkRadius: 0.2 + ((i * 19) % 0.1),
+        branchingAngle: 0.52 + ((i * 23) % 0.15),
+        recursionDepth: isMobile ? 2 : quality === "ultra" ? 3 : 2,
+        branchesPerLevel: 2,
+        foliageDensity: isMobile ? 4 : quality === "low" ? 4 : 8,
       });
 
-      trees.push({
-        geometry: treeData.branchGeometry,
-        position: [x, y, z],
-        rotationY: (i * 73) % (Math.PI * 2),
-      });
-
-      // Offset foliage instances into world coordinates
+      // Transform tree branches into world coordinates
       const worldTransform = new THREE.Matrix4().makeTranslation(x, y, z);
       const rotY = new THREE.Matrix4().makeRotationY((i * 73) % (Math.PI * 2));
       worldTransform.multiply(rotY);
 
+      treeData.branchGeometry.applyMatrix4(worldTransform);
+      trunkGeometries.push(treeData.branchGeometry);
+
+      // Offset foliage instances into world coordinates
       for (const fMat of treeData.foliageTransforms) {
         const combined = worldTransform.clone().multiply(fMat);
         foliageMats.push(combined);
       }
     }
 
+    // Merge all tree trunks into ONE single BufferGeometry (1 draw call!)
+    let merged = new THREE.BufferGeometry();
+    if (trunkGeometries.length > 0) {
+      let totalPos = 0;
+      let totalNorm = 0;
+      let totalIdx = 0;
+
+      for (const g of trunkGeometries) {
+        totalPos += g.attributes.position.count * 3;
+        if (g.attributes.normal) totalNorm += g.attributes.normal.count * 3;
+        if (g.index) totalIdx += g.index.count;
+      }
+
+      const mPos = new Float32Array(totalPos);
+      const mNorm = new Float32Array(totalNorm);
+      const mIdx = totalIdx > 65535 ? new Uint32Array(totalIdx) : new Uint16Array(totalIdx);
+
+      let pOffset = 0;
+      let nOffset = 0;
+      let iCounter = 0;
+
+      for (const g of trunkGeometries) {
+        const pos = g.attributes.position.array;
+        mPos.set(pos, pOffset);
+
+        if (g.attributes.normal) {
+          mNorm.set(g.attributes.normal.array, nOffset);
+          nOffset += g.attributes.normal.array.length;
+        }
+
+        if (g.index) {
+          const idx = g.index.array;
+          const vOffset = pOffset / 3;
+          for (let k = 0; k < idx.length; k++) {
+            mIdx[iCounter++] = idx[k] + vOffset;
+          }
+        }
+
+        pOffset += pos.length;
+        g.dispose();
+      }
+
+      merged.setAttribute("position", new THREE.BufferAttribute(mPos, 3));
+      if (totalNorm > 0) merged.setAttribute("normal", new THREE.BufferAttribute(mNorm, 3));
+      if (totalIdx > 0) merged.setIndex(new THREE.BufferAttribute(mIdx, 1));
+    }
+
     return {
-      treeMeshes: trees,
+      mergedForestTrunks: merged,
       allFoliageMatrices: foliageMats,
       totalFoliageCount: foliageMats.length,
     };
-  }, [seed, quality]);
+  }, [seed, quality, isMobile]);
 
   // Foliage instanced mesh setup
   const foliageGeometry = useMemo(() => new THREE.DodecahedronGeometry(0.35, 0), []);
@@ -109,7 +158,7 @@ export function ForestWorld() {
   );
 
   // 3. Bio-luminescent Drifting Spores / Pollen Particles
-  const sporeCount = quality === "ultra" ? 8000 : 4000;
+  const sporeCount = isMobile ? 1200 : quality === "ultra" ? 6000 : 2800;
   const sporeGeometry = useMemo(() => {
     return ProceduralParticleEngine.createParticleBuffer(sporeCount, 18, 12);
   }, [sporeCount]);
@@ -162,21 +211,16 @@ export function ForestWorld() {
         <primitive object={terrainMaterial} ref={terrainMaterialRef} attach="material" />
       </mesh>
 
-      {/* Recursive Procedural Tree Trunks & Branches */}
-      {treeMeshes.map((tree, idx) => (
-        <mesh
-          key={idx}
-          geometry={tree.geometry}
-          position={tree.position}
-          rotation={[0, tree.rotationY, 0]}
-        >
+      {/* Recursive Procedural Tree Trunks & Branches — Unified Single Draw Call */}
+      {mergedForestTrunks && (
+        <mesh geometry={mergedForestTrunks}>
           <meshStandardMaterial
             color="#141920"
             roughness={0.85}
             metalness={0.15}
           />
         </mesh>
-      ))}
+      )}
 
       {/* Instanced Canopy Leaves with Subsurface Wind & Glow */}
       <instancedMesh

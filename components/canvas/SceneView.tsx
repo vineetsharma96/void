@@ -13,6 +13,14 @@ export function SceneView() {
   const toggleLiteFallback = useWorldStore((s) => s.actions.toggleLiteFallback);
 
   const dpr = useMemo(() => {
+    const isMobile =
+      typeof window !== "undefined" &&
+      (window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+
+    if (isMobile) {
+      return quality === "ultra" ? 1.25 : quality === "low" ? 0.75 : 1.0;
+    }
+
     switch (quality) {
       case "ultra": return Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 2, 2.0);
       case "high": return 1.5;

@@ -160,11 +160,11 @@ function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffer
 
   const mergedPos = new Float32Array(totalPositions);
   const mergedNorm = new Float32Array(totalNormals);
-  const mergedIndices: number[] = [];
+  const mergedIndices = totalIndices > 65535 ? new Uint32Array(totalIndices) : new Uint16Array(totalIndices);
 
   let posOffset = 0;
   let normOffset = 0;
-  let indexOffset = 0;
+  let indexCounter = 0;
 
   for (const g of geometries) {
     const pos = g.attributes.position.array;
@@ -179,12 +179,13 @@ function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffer
       const idx = g.index.array;
       const vertexOffset = posOffset / 3;
       for (let i = 0; i < idx.length; i++) {
-        mergedIndices.push(idx[i] + vertexOffset);
+        mergedIndices[indexCounter++] = idx[i] + vertexOffset;
       }
-      indexOffset += idx.length;
     }
 
     posOffset += pos.length;
+    // Free intermediate cylinder buffer from memory
+    g.dispose();
   }
 
   const merged = new THREE.BufferGeometry();
@@ -194,7 +195,10 @@ function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffer
   } else {
     merged.computeVertexNormals();
   }
-  merged.setIndex(mergedIndices);
+
+  if (totalIndices > 0) {
+    merged.setIndex(new THREE.BufferAttribute(mergedIndices, 1));
+  }
 
   return merged;
 }

@@ -19,16 +19,18 @@ export function Effects() {
 
   // Initialize EffectComposer and rendering passes
   const [composer, bloomPass, cinematicPass] = useMemo(() => {
-    const dpr = gl.getPixelRatio();
+    const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+    const effectiveDpr = isMobile ? 1.0 : Math.min(gl.getPixelRatio(), 1.5);
+
     const renderTarget = new THREE.WebGLRenderTarget(
-      Math.floor(size.width * dpr),
-      Math.floor(size.height * dpr),
+      Math.floor(size.width * effectiveDpr),
+      Math.floor(size.height * effectiveDpr),
       {
         type: THREE.HalfFloatType,
         format: THREE.RGBAFormat,
         minFilter: THREE.LinearFilter,
         magFilter: THREE.LinearFilter,
-        samples: 4,
+        samples: 0, // 0 samples prevents mobile WebGL context loss
       }
     );
 
@@ -40,10 +42,10 @@ export function Effects() {
 
     // 2. Multi-Scale Unreal Bloom Pass
     const bloom = new UnrealBloomPass(
-      new THREE.Vector2(size.width, size.height),
-      0.82,
-      0.45,
-      0.68
+      new THREE.Vector2(Math.floor(size.width * effectiveDpr), Math.floor(size.height * effectiveDpr)),
+      isMobile ? 0.45 : 0.75,
+      0.35,
+      0.72
     );
     comp.addPass(bloom);
 
@@ -56,9 +58,13 @@ export function Effects() {
 
   // Synchronize composer buffer dimensions with viewport resize
   useEffect(() => {
-    const dpr = gl.getPixelRatio();
-    composer.setSize(Math.floor(size.width * dpr), Math.floor(size.height * dpr));
-    bloomPass.resolution.set(Math.floor(size.width * dpr), Math.floor(size.height * dpr));
+    const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+    const effectiveDpr = isMobile ? 1.0 : Math.min(gl.getPixelRatio(), 1.5);
+    const w = Math.floor(size.width * effectiveDpr);
+    const h = Math.floor(size.height * effectiveDpr);
+
+    composer.setSize(w, h);
+    bloomPass.resolution.set(w, h);
   }, [composer, bloomPass, size, gl]);
 
   // Adaptive fidelity scaling mapped to quality tier

@@ -41,7 +41,7 @@ export function QualitySelector() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-20 pointer-events-auto font-mono text-xs select-none">
+    <div className="fixed bottom-14 sm:bottom-6 right-2 sm:right-6 z-20 pointer-events-auto font-mono text-xs select-none">
       <div className="relative">
         <button
           onClick={() => {
@@ -51,10 +51,10 @@ export function QualitySelector() {
           aria-haspopup="true"
           aria-expanded={isOpen}
           aria-label="Engine Performance & Quality Settings"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-void-950/80 border border-void-800 text-void-400 hover:text-void-100 hover:border-void-600 backdrop-blur-md transition-all shadow-xl focus-visible:ring-2 focus-visible:ring-ion-cyan focus-visible:outline-none"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-void-950/85 border border-void-800 text-void-400 hover:text-void-100 hover:border-void-600 backdrop-blur-md transition-all shadow-xl focus-visible:ring-2 focus-visible:ring-ion-cyan focus-visible:outline-none"
         >
-          <Sliders className="w-3 h-3 text-ion-cyan" />
-          <span className="text-[10px] tracking-wider uppercase font-medium flex items-center gap-1.5">
+          <Sliders className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-ion-cyan" />
+          <span className="text-[9px] sm:text-[10px] tracking-wider uppercase font-medium flex items-center gap-1 sm:gap-1.5">
             {adaptiveQuality ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />

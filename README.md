@@ -91,12 +91,15 @@ Every single vertex, normal, UV coordinate, color spectrum, atmospheric particle
 
 ---
 
-## 🚀 Adaptive Performance Governor
+## ✨ Advanced Optical Post-Processing Pipeline
 
-The engine continuously tracks frame delta times and hardware thermals:
-- **Tiers**: Ultra (45K particles, DPR 2.0), High (25K particles, DPR 1.5), Medium (14K particles, DPR 1.0), Low (6K particles, DPR 0.85), VOID LITE (Pure 2D Canvas Fallback).
-- **Thermal Hysteresis**: 3-second sustained drop before downgrading; 5-second sustained stability before upgrading.
-- **Auto / Locked Mode**: Easily lock to any tier or allow the governor to auto-tune.
+The engine includes a zero-asset optical post-processing pipeline operating at native render resolutions:
+- **Procedural Multi-Scale Bloom (`UnrealBloomPass`)**: Generates radiant luminescence on high-emission geometry (Origin core, Forest bioluminescence, Ocean crest highlights, Machine kinematic sparks, and Void photon ring/accretion disk).
+- **Radial Chromatic Aberration**: Distance-squared RGB channel dispersion simulating prime optical lenses.
+- **Procedural Film Grain**: Temporal high-frequency mathematical noise eliminates 8-bit dark color banding across deep void space.
+- **Cinematic Vignette**: Smooth cosine falloff drawing focus to central cosmological anomalies.
+- **Warp Barrel Distortion**: Dynamic lens curvature dynamically driven by `transitionProgress` during hyperspace realm leaps.
+- **Adaptive Performance Governance**: Automatically bypasses expensive passes on Low quality tiers to preserve 60 FPS budgets; toggleable in the HUD menu.
 
 ---
 

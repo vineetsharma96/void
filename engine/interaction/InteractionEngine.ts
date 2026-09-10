@@ -170,8 +170,10 @@ export class InteractionEngine {
       const vx = (deltaX / dt) * 1000; // px/s
       const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY) * 1.5;
 
-      // Swipe detected: threshold 600px/s or displacement > 90px
-      if (isHorizontalSwipe && (Math.abs(vx) > 600 || Math.abs(deltaX) > 90)) {
+      // Quick flick swipe: short duration (<280ms), high velocity (>800px/s), and clear displacement (>100px)
+      // Standard longer-duration drags are for 360-degree orbital camera rotation
+      const isQuickFlick = dt < 280 && Math.abs(vx) > 800 && Math.abs(deltaX) > 100;
+      if (isHorizontalSwipe && isQuickFlick) {
         this.handleSwipeNavigation(deltaX < 0 ? "next" : "prev");
       }
     }

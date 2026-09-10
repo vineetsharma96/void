@@ -75,9 +75,14 @@ Every single vertex, normal, UV coordinate, color spectrum, atmospheric particle
 - **Deterministic Force Accumulators**:
   - **Cursor Repulsion / Attraction**: Inverse-square deflection of ambient particles.
   - **Shockwave Detonation**: Pressing `Space` or clicking detonates an expanding radial shockwave pulse with Hooke's law spring-damper returns.
+- **360° Spherical Orbital View**:
+  - Full $360^\circ$ continuous horizontal azimuth rotation ($\theta \in (-\infty, \infty)$) and vertical elevation pitch ($\phi \in [-81^\circ, +81^\circ]$).
+  - Drag with mouse or touch, or use keys `A`/`D` (horizontal azimuth) and `W`/`S` (vertical pitch).
+  - Continuous gentle cosmological auto-rotation when idle (accelerated in `ORBIT` mode).
 - **Multi-Touch Gestures**:
-  - Two-finger pinch to Dolly Zoom the camera.
-  - Horizontal swipe for realm paging.
+  - Continuous 1-finger drag for $360^\circ$ orbital exploration.
+  - Pinch-to-zoom for camera dolly distance.
+  - Quick horizontal flick-swipe ($< 280\text{ ms}$) for realm paging.
 - **Device Orientation / Mobile Gyro**:
   - Real-time device tilt maps to parallax camera rotation angles.
 
@@ -114,6 +119,8 @@ The engine includes a zero-asset optical post-processing pipeline operating at n
   - `Space`: Detonate procedural shockwave
   - `R`: Regenerate cosmological seed
   - `S`: Copy deep-link URL to clipboard
+  - `A` / `D`: Rotate camera azimuth 360° horizontally
+  - `W` / `S`: Pitch camera elevation vertically
   - `M`: Toggle procedural audio
   - `L`: Toggle VOID LITE 2D Fallback
 

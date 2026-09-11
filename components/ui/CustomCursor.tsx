@@ -8,6 +8,8 @@ export function CustomCursor() {
   const [isHovered, setIsHovered] = useState(false);
   const pointer = useWorldStore((s) => s.pointer);
   const shockwave = useWorldStore((s) => s.shockwave);
+  const focusedObjectId = useWorldStore((s) => s.focusedObjectId);
+  const reticleMode = useWorldStore((s) => s.reticleMode);
   const [rippleActive, setRippleActive] = useState(false);
   const ripplePos = useRef({ x: -100, y: -100 });
 
@@ -51,15 +53,18 @@ export function CustomCursor() {
     let animationFrameId: number;
     const render = () => {
       // Smooth lerp for trailing ring
-      ringPos.current.x += (mousePos.current.x - ringPos.current.x) * 0.18;
-      ringPos.current.y += (mousePos.current.y - ringPos.current.y) * 0.18;
+      ringPos.current.x += (mousePos.current.x - ringPos.current.x) * 0.22;
+      ringPos.current.y += (mousePos.current.y - ringPos.current.y) * 0.22;
+
+      const isTargeted = isHovered || focusedObjectId !== null;
+      const targetSize = isTargeted ? 28 : 16;
 
       if (dotRef.current) {
         dotRef.current.style.transform = `translate3d(${mousePos.current.x - 3}px, ${mousePos.current.y - 3}px, 0)`;
       }
       if (ringRef.current) {
-        ringRef.current.style.transform = `translate3d(${ringPos.current.x - (isHovered ? 24 : 16)}px, ${
-          ringPos.current.y - (isHovered ? 24 : 16)
+        ringRef.current.style.transform = `translate3d(${ringPos.current.x - targetSize}px, ${
+          ringPos.current.y - targetSize
         }px, 0)`;
       }
 
@@ -72,9 +77,12 @@ export function CustomCursor() {
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isHovered]);
+  }, [isHovered, focusedObjectId]);
 
   if (isTouchDevice) return null;
+
+  const isFocus = focusedObjectId !== null || reticleMode === "focus";
+  const isInteract = reticleMode === "interact";
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden select-none">
@@ -82,26 +90,44 @@ export function CustomCursor() {
       <div
         ref={dotRef}
         className={`absolute top-0 left-0 w-1.5 h-1.5 rounded-full transition-colors duration-150 ${
-          pointer.isDown ? "bg-amber-glow scale-150" : isHovered ? "bg-ion-cyan" : "bg-void-100"
+          isInteract
+            ? "bg-ion-amber scale-150 shadow-[0_0_8px_rgba(229,169,60,0.9)]"
+            : isFocus
+            ? "bg-ion-cyan scale-125 shadow-[0_0_8px_rgba(40,240,220,0.9)]"
+            : pointer.isDown
+            ? "bg-ion-amber scale-150"
+            : isHovered
+            ? "bg-ion-cyan"
+            : "bg-void-100"
         }`}
       />
 
-      {/* Trailing Reticle Ring */}
+      {/* Trailing Reticle Ring & Crosshair Brackets */}
       <div
         ref={ringRef}
-        className={`absolute top-0 left-0 rounded-full border transition-all duration-200 ease-out ${
-          isHovered
+        className={`absolute top-0 left-0 rounded-full border transition-all duration-200 ease-out flex items-center justify-center ${
+          isInteract
+            ? "w-14 h-14 border-ion-amber border-2 animate-pulse shadow-[0_0_15px_rgba(229,169,60,0.5)]"
+            : isFocus
+            ? "w-14 h-14 border-ion-cyan border-dashed animate-spin shadow-[0_0_15px_rgba(40,240,220,0.4)]"
+            : isHovered
             ? "w-12 h-12 border-ion-cyan/80 border-dashed animate-spin"
             : pointer.isDown
-            ? "w-8 h-8 border-amber-glow/90 scale-90"
+            ? "w-8 h-8 border-ion-amber/90 scale-90"
             : "w-8 h-8 border-void-400/40"
         }`}
-      />
+      >
+        {isFocus && (
+          <span className="absolute -top-4 text-[8px] font-mono tracking-widest text-ion-cyan uppercase bg-void-950/80 px-1 py-0.2 rounded border border-ion-cyan/30">
+            {focusedObjectId?.toUpperCase() || "TARGET"}
+          </span>
+        )}
+      </div>
 
       {/* Radiating Shockwave Impulse Ripple */}
       {rippleActive && (
         <div
-          className="absolute top-0 left-0 rounded-full border border-amber-glow/80 pointer-events-none animate-ping"
+          className="absolute top-0 left-0 rounded-full border border-ion-amber/80 pointer-events-none animate-ping"
           style={{
             transform: `translate3d(${ripplePos.current.x - 28}px, ${ripplePos.current.y - 28}px, 0)`,
             width: "56px",

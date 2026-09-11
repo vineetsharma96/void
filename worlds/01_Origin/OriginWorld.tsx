@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { GeodesicCore } from "./GeodesicCore";
 import { OrbitalRings } from "./OrbitalRings";
 import { OriginParticles } from "./OriginParticles";
+import { WorldPortal } from "@/components/canvas/WorldPortal";
 
 export function OriginWorld() {
   const gridRef = useRef<THREE.Group>(null);
@@ -26,6 +27,15 @@ export function OriginWorld() {
 
       {/* 25,000+ Procedural Particles */}
       <OriginParticles />
+
+      {/* Spatial Inter-World Portal to Realm 02 (Forest) */}
+      <WorldPortal
+        id="portal_origin_to_forest"
+        name="VERDANT RIFT"
+        targetRealm="forest"
+        position={[6.5, 0.2, -4.5]}
+        color="#38ef7d"
+      />
 
       {/* Atmospheric Concentric Distance Rings */}
       <group ref={gridRef} position={[0, -2.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>

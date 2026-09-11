@@ -4,6 +4,8 @@ import React, { useCallback, useMemo, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useWorldStore } from "@/engine/state/useWorldStore";
 import { interactionEngine } from "@/engine/interaction/InteractionEngine";
+import { raycastManager } from "@/engine/interaction/RaycastManager";
+import { VirtualJoystick } from "@/components/ui/VirtualJoystick";
 import { Experience } from "./Experience";
 import { Effects } from "./Effects";
 
@@ -57,12 +59,15 @@ export function SceneView() {
     interactionEngine.handlePointerUp();
   }, []);
 
-  // Click/tap generates a physical shockwave impulse
+  // Click/tap generates a physical shockwave impulse & triggers object interaction if focused
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const normX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const normY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-    interactionEngine.triggerShockwave(normX, normY, 1.0);
+    const interacted = raycastManager.handleInteraction();
+    if (!interacted) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const normX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const normY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+      interactionEngine.triggerShockwave(normX, normY, 1.0);
+    }
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -119,6 +124,9 @@ export function SceneView() {
         <Experience />
         <Effects />
       </Canvas>
+
+      {/* Mobile Virtual Joystick for spatial flight in Explore mode */}
+      <VirtualJoystick />
     </div>
   );
 }

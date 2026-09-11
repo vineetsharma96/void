@@ -75,10 +75,20 @@ Every single vertex, normal, UV coordinate, color spectrum, atmospheric particle
 - **Deterministic Force Accumulators**:
   - **Cursor Repulsion / Attraction**: Inverse-square deflection of ambient particles.
   - **Shockwave Detonation**: Pressing `Space` or clicking detonates an expanding radial shockwave pulse with Hooke's law spring-damper returns.
+- **3D Exploration & Spatial Presence**:
+  - **EXPLORE Mode**: Free-roaming 3D flight through the environment via `W`/`A`/`S`/`D` or Arrow keys on desktop with smooth kinematic acceleration and head-bob motion.
+  - **Virtual Joystick**: Contextual on-screen dual-axis thumbstick rendered on mobile devices in `EXPLORE` mode.
+  - **Spherical World Boundaries**: Prevents accidental clipping through central structures or falling off into infinity ($r \in [2.3, 22.0]\text{ m}$).
 - **360° Spherical Orbital View**:
   - Full $360^\circ$ continuous horizontal azimuth rotation ($\theta \in (-\infty, \infty)$) and vertical elevation pitch ($\phi \in [-81^\circ, +81^\circ]$).
-  - Drag with mouse or touch, or use keys `A`/`D` (horizontal azimuth) and `W`/`S` (vertical pitch).
+  - Drag with mouse or touch, or use keys `A`/`D` (horizontal azimuth) and `W`/`S` (vertical pitch in Orbit mode).
   - Continuous gentle cosmological auto-rotation when idle (accelerated in `ORBIT` mode).
+- **Proximity & Interactive Object Lifecycle**:
+  - Procedural structures feature dynamic states (`dormant`, `aware`, `focused`, `interacting`, `active`, `unlocked`).
+  - Approaching structures triggers awareness acceleration and audio modulations.
+  - Clicking/tapping focused structures energizes their mechanics and unlocks cosmological discoveries.
+- **Player Disturbance Field**:
+  - Real-time physical wake repulsion and tangential vortex swirling in GPU particle clouds around the moving explorer.
 - **Multi-Touch Gestures**:
   - Continuous 1-finger drag for $360^\circ$ orbital exploration.
   - Pinch-to-zoom for camera dolly distance.
@@ -114,13 +124,12 @@ The engine includes a zero-asset optical post-processing pipeline operating at n
 - **`prefers-reduced-motion` Compliance**: Automatically detected; halts idle camera drift, disables warp banking roll, and reduces transitions to gentle 150ms cross-fades.
 - **WCAG 2.1 AA Screen Reader Announcements**: Live `aria-live="polite"` region verbally announces realm changes, seed regenerations, and shockwaves.
 - **Keyboard Shortcuts**:
+  - `W` / `A` / `S` / `D` or `Arrows`: Move in `EXPLORE` mode (or pitch/orbit in `ORBIT` mode)
   - `1` - `5`: Direct jump to realms (Origin, Forest, Ocean, Machine, Void)
   - `←` / `→`: Previous / Next realm
   - `Space`: Detonate procedural shockwave
   - `R`: Regenerate cosmological seed
   - `S`: Copy deep-link URL to clipboard
-  - `A` / `D`: Rotate camera azimuth 360° horizontally
-  - `W` / `S`: Pitch camera elevation vertically
   - `M`: Toggle procedural audio
   - `L`: Toggle VOID LITE 2D Fallback
 

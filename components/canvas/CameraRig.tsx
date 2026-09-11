@@ -4,6 +4,8 @@ import React, { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useWorldStore } from "@/engine/state/useWorldStore";
+import { explorerController } from "@/engine/player/ExplorerController";
+import { raycastManager } from "@/engine/interaction/RaycastManager";
 
 export function CameraRig() {
   const { camera } = useThree();
@@ -14,6 +16,7 @@ export function CameraRig() {
   const dollyOffset = useWorldStore((s) => s.dollyOffset);
   const gyro = useWorldStore((s) => s.gyro);
   const reducedMotion = useWorldStore((s) => s.reducedMotion);
+  const setMoveInput = useWorldStore((s) => s.actions.setMoveInput);
 
   // Spherical orbital angles (azimuth: unbounded 360 deg, elevation: vertical pitch)
   const azimuth = useRef(0);
@@ -28,28 +31,65 @@ export function CameraRig() {
   const targetPos = useRef(new THREE.Vector3(0, 0, 7.5));
   const lookTarget = useRef(new THREE.Vector3(0, 0, 0));
 
+  // Keyboard state for spatial movement in EXPLORE mode & orbital rotation in ORBIT mode
   useEffect(() => {
-    // Initial camera placement
     camera.position.set(0, 0, 16);
 
-    // Keyboard support for 360-degree orbital rotation (A/D: Azimuth, W/S: Elevation)
+    const keysDown = new Set<string>();
+
+    const updateMovement = () => {
+      let forward = 0;
+      let right = 0;
+      let up = 0;
+
+      if (keysDown.has("w") || keysDown.has("W") || keysDown.has("ArrowUp")) forward += 1;
+      if (keysDown.has("s") || keysDown.has("S") || keysDown.has("ArrowDown")) forward -= 1;
+      if (keysDown.has("d") || keysDown.has("D") || keysDown.has("ArrowRight")) right += 1;
+      if (keysDown.has("a") || keysDown.has("A") || keysDown.has("ArrowLeft")) right -= 1;
+      if (keysDown.has("e") || keysDown.has("E") || keysDown.has(" ")) up += 1;
+      if (keysDown.has("q") || keysDown.has("Q") || keysDown.has("Shift")) up -= 1;
+
+      setMoveInput({ forward, right, up });
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "a" || e.key === "A") {
-        targetAzimuth.current -= 0.18;
-      } else if (e.key === "d" || e.key === "D") {
-        targetAzimuth.current += 0.18;
-      } else if (e.key === "w" || e.key === "W") {
-        targetElevation.current = THREE.MathUtils.clamp(targetElevation.current + 0.12, -1.42, 1.42);
-      } else if (e.key === "s" || e.key === "S") {
-        targetElevation.current = THREE.MathUtils.clamp(targetElevation.current - 0.12, -1.42, 1.42);
+
+      const store = useWorldStore.getState();
+      if (store.cameraMode === "explore") {
+        keysDown.add(e.key);
+        updateMovement();
+      } else {
+        // Orbit mode keyboard rotation
+        if (e.key === "a" || e.key === "A") {
+          targetAzimuth.current -= 0.18;
+        } else if (e.key === "d" || e.key === "D") {
+          targetAzimuth.current += 0.18;
+        } else if (e.key === "w" || e.key === "W") {
+          targetElevation.current = THREE.MathUtils.clamp(targetElevation.current + 0.12, -1.42, 1.42);
+        } else if (e.key === "s" || e.key === "S") {
+          targetElevation.current = THREE.MathUtils.clamp(targetElevation.current - 0.12, -1.42, 1.42);
+        }
       }
     };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysDown.delete(e.key);
+      updateMovement();
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [camera]);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [camera, setMoveInput]);
 
   useFrame((state, delta) => {
+    // Update central raycaster testing against interactive structures
+    raycastManager.update(camera);
+
     // Responsive camera position based on opening phase
     if (!isOpeningComplete) {
       // Intro camera zoom
@@ -99,6 +139,35 @@ export function CameraRig() {
     if ("fov" in camera && (camera as THREE.PerspectiveCamera).fov !== 55) {
       (camera as THREE.PerspectiveCamera).fov = 55;
       camera.updateProjectionMatrix();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FREE EXPLORATION MODE (WASD + Mouse-Look + Spatial Kinematics)
+    // ─────────────────────────────────────────────────────────────
+    if (cameraMode === "explore") {
+      if (pointer.isDown) {
+        if (!isDragging.current) {
+          isDragging.current = true;
+          prevPointer.current = { x: pointer.x, y: pointer.y };
+        } else {
+          const dx = (pointer.x - prevPointer.current.x) * 450;
+          const dy = (pointer.y - prevPointer.current.y) * 450;
+          prevPointer.current = { x: pointer.x, y: pointer.y };
+          explorerController.addLookDelta(dx, dy);
+        }
+      } else {
+        isDragging.current = false;
+      }
+
+      // Kinematic update
+      const { cameraPosition, lookDirection } = explorerController.update(delta);
+      currentPos.current.lerp(cameraPosition, 0.15);
+      camera.position.copy(currentPos.current);
+
+      const lookTargetPoint = currentPos.current.clone().add(lookDirection);
+      lookTarget.current.lerp(lookTargetPoint, 0.18);
+      camera.lookAt(lookTarget.current);
+      return;
     }
 
     // Interactive 360-Degree Spherical Drag Control

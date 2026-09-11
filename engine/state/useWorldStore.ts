@@ -2,7 +2,8 @@ import { create } from "zustand";
 
 export type RealmId = "origin" | "forest" | "ocean" | "machine" | "void";
 export type QualityTier = "ultra" | "high" | "medium" | "low" | "lite";
-export type CameraMode = "cinematic" | "orbit" | "inspect";
+export type CameraMode = "cinematic" | "orbit" | "inspect" | "explore";
+export type ReticleMode = "default" | "focus" | "interact" | "discovery";
 
 export interface WorldState {
   currentRealm: RealmId;
@@ -21,6 +22,34 @@ export interface WorldState {
   hasInteracted: boolean;
   showTelemetry: boolean;
   postProcessingEnabled: boolean;
+
+  // Spatial Exploration State
+  playerPosition: [number, number, number];
+  playerVelocity: [number, number, number];
+  moveInput: {
+    forward: number; // -1 to 1 (W/S or Virtual Joystick Y)
+    right: number;   // -1 to 1 (A/D or Virtual Joystick X)
+    up: number;      // -1 to 1 (Space/Shift)
+  };
+
+  // Interaction Focus & Cursor Reticle
+  focusedObjectId: string | null;
+  reticleMode: ReticleMode;
+
+  // Session Discovery Progress
+  discoveries: {
+    signals: string[];
+    structures: string[];
+    portals: string[];
+  };
+
+  // Machine Realm Multi-Stage Mechanical Chain Reaction
+  machineState: {
+    gearsEngaged: boolean;
+    pistonsEngaged: boolean;
+    capacitorEngaged: boolean;
+    gatewayActive: boolean;
+  };
   
   // Interaction & Raycast Pointer
   pointer: {
@@ -96,6 +125,15 @@ export interface WorldState {
     setReducedMotion: (enable: boolean) => void;
     announce: (message: string) => void;
     updateTelemetry: (metrics: Partial<WorldState["activeTelemetry"]>) => void;
+    setPlayerPosition: (pos: [number, number, number]) => void;
+    setPlayerVelocity: (vel: [number, number, number]) => void;
+    setMoveInput: (input: Partial<WorldState["moveInput"]>) => void;
+    setFocusedObject: (id: string | null) => void;
+    setReticleMode: (mode: ReticleMode) => void;
+    addDiscovery: (id: string, type: string) => void;
+    engageMachineGears: () => void;
+    engageMachinePistons: () => void;
+    engageMachineCapacitor: () => void;
   };
 }
 
@@ -116,6 +154,34 @@ export const useWorldStore = create<WorldState>((set, get) => ({
   isOpeningComplete: false,
   hasInteracted: false,
   showTelemetry: true,
+
+  // Spatial Exploration State
+  playerPosition: [0, 0, 7.5],
+  playerVelocity: [0, 0, 0],
+  moveInput: {
+    forward: 0,
+    right: 0,
+    up: 0,
+  },
+
+  // Interaction Focus & Cursor Reticle
+  focusedObjectId: null,
+  reticleMode: "default",
+
+  // Session Discovery Progress
+  discoveries: {
+    signals: [],
+    structures: [],
+    portals: [],
+  },
+
+  // Machine Realm Multi-Stage Mechanical Chain Reaction
+  machineState: {
+    gearsEngaged: false,
+    pistonsEngaged: false,
+    capacitorEngaged: false,
+    gatewayActive: false,
+  },
 
   pointer: {
     x: 0,
@@ -221,6 +287,41 @@ export const useWorldStore = create<WorldState>((set, get) => ({
     updateTelemetry: (metrics) =>
       set((state) => ({
         activeTelemetry: { ...state.activeTelemetry, ...metrics },
+      })),
+    setPlayerPosition: (pos) => set({ playerPosition: pos }),
+    setPlayerVelocity: (vel) => set({ playerVelocity: vel }),
+    setMoveInput: (input) =>
+      set((state) => ({
+        moveInput: { ...state.moveInput, ...input },
+      })),
+    setFocusedObject: (id) =>
+      set((state) => ({
+        focusedObjectId: id,
+        reticleMode: id ? "focus" : state.reticleMode === "focus" ? "default" : state.reticleMode,
+      })),
+    setReticleMode: (mode) => set({ reticleMode: mode }),
+    addDiscovery: (id, type) =>
+      set((state) => {
+        const key = type === "portal" ? "portals" : type === "structure" || type === "core" ? "structures" : "signals";
+        if (state.discoveries[key].includes(id)) return state;
+        return {
+          discoveries: {
+            ...state.discoveries,
+            [key]: [...state.discoveries[key], id],
+          },
+        };
+      }),
+    engageMachineGears: () =>
+      set((state) => ({
+        machineState: { ...state.machineState, gearsEngaged: true },
+      })),
+    engageMachinePistons: () =>
+      set((state) => ({
+        machineState: { ...state.machineState, pistonsEngaged: true },
+      })),
+    engageMachineCapacitor: () =>
+      set((state) => ({
+        machineState: { ...state.machineState, capacitorEngaged: true, gatewayActive: true },
       })),
   },
 }));

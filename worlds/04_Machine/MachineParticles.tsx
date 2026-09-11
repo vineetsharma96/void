@@ -11,6 +11,7 @@ export function MachineParticles() {
   const quality = useWorldStore((s) => s.quality);
   const pointer = useWorldStore((s) => s.pointer);
   const seed = useWorldStore((s) => s.seed);
+  const machineState = useWorldStore((s) => s.machineState);
 
   const particleCount = quality === "ultra" ? 8000 : 4000;
 
@@ -32,7 +33,15 @@ export function MachineParticles() {
     if (!pointsRef.current) return;
     const mat = pointsRef.current.material as THREE.ShaderMaterial;
     if (mat.uniforms) {
-      mat.uniforms.uTime.value += delta;
+      const speedMultiplier = machineState.capacitorEngaged
+        ? 3.6
+        : machineState.pistonsEngaged
+        ? 2.4
+        : machineState.gearsEngaged
+        ? 1.7
+        : 1.0;
+
+      mat.uniforms.uTime.value += delta * speedMultiplier;
       mat.uniforms.uPointer.value.set(pointer.x * 6, pointer.y * 5, 0);
       mat.uniforms.uPointerDown.value = pointer.isDown ? 1 : 0;
     }

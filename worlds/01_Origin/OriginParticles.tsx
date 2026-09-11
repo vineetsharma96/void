@@ -17,6 +17,11 @@ uniform vec3 uShockwaveCenter;
 uniform float uShockwaveTime;
 uniform float uShockwaveStrength;
 
+// Explorer Spatial Disturbance Field
+uniform vec3 uPlayerPos;
+uniform vec3 uPlayerVel;
+uniform float uPlayerSpeed;
+
 attribute float aRandom;
 attribute float aSpeed;
 attribute float aSize;
@@ -47,6 +52,16 @@ void main() {
   float repulseFactor = smoothstep(repulseRadius, 0.0, distToPointer);
   vec3 repulseDir = normalize(currentPos - uPointer);
   currentPos += repulseDir * repulseFactor * (uPointerDown > 0.5 ? 3.0 : 1.4);
+
+  // Explorer Spatial Disturbance Field (Physical wake repulsion & swirl)
+  float distToPlayer = distance(currentPos, uPlayerPos);
+  float playerRadius = 3.6;
+  if (distToPlayer < playerRadius) {
+    float playerDisturbFactor = smoothstep(playerRadius, 0.0, distToPlayer);
+    vec3 disturbDir = normalize(currentPos - uPlayerPos + vec3(0.001));
+    vec3 swirlDir = cross(disturbDir, vec3(0.0, 1.0, 0.0));
+    currentPos += (disturbDir * 2.2 + swirlDir * (uPlayerSpeed + 0.5) * 0.6) * playerDisturbFactor;
+  }
 
   // Dynamic Physical Shockwave Wavefront Displacement
   float waveRadius = uShockwaveTime * 14.0;
@@ -143,6 +158,9 @@ export function OriginParticles() {
       uShockwaveCenter: { value: new THREE.Vector3() },
       uShockwaveTime: { value: 999.0 },
       uShockwaveStrength: { value: 0.0 },
+      uPlayerPos: { value: new THREE.Vector3(0, 0, 7.5) },
+      uPlayerVel: { value: new THREE.Vector3(0, 0, 0) },
+      uPlayerSpeed: { value: 0.0 },
     }),
     [seed]
   );
@@ -153,6 +171,16 @@ export function OriginParticles() {
     uniforms.uSeed.value = seed;
     uniforms.uPointer.value.set(pointer.x * 5.0, pointer.y * 3.5, 0);
     uniforms.uPointerDown.value = pointer.isDown ? 1 : 0;
+
+    // Disturbance Field values from player
+    const playerPos = useWorldStore.getState().playerPosition;
+    const playerVel = useWorldStore.getState().playerVelocity;
+    uniforms.uPlayerPos.value.set(playerPos[0], playerPos[1], playerPos[2]);
+    uniforms.uPlayerVel.value.set(playerVel[0], playerVel[1], playerVel[2]);
+    const speed = Math.sqrt(
+      playerVel[0] * playerVel[0] + playerVel[1] * playerVel[1] + playerVel[2] * playerVel[2]
+    );
+    uniforms.uPlayerSpeed.value = speed;
 
     const now = typeof performance !== "undefined" ? performance.now() * 0.001 : 0;
     const elapsed = now - shockwave.time;

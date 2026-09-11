@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useWorldStore } from "@/engine/state/useWorldStore";
@@ -76,11 +76,62 @@ void main() {
 }
 `;
 
+import { worldEngine } from "@/engine/world/WorldEngine";
+import { SpatialLabel } from "@/components/canvas/SpatialLabel";
+import { audioEngine } from "@/engine/audio/AudioSynthesizer";
+
 export function GeodesicCore() {
   const meshRef = useRef<THREE.Mesh>(null);
   const innerMeshRef = useRef<THREE.Mesh>(null);
+  const cageRef = useRef<THREE.Mesh>(null);
+  const coreNodeRef = useRef<THREE.Mesh>(null);
+
   const pointer = useWorldStore((s) => s.pointer);
   const seed = useWorldStore((s) => s.seed);
+  const triggerShockwave = useWorldStore((s) => s.actions.triggerShockwave);
+
+  const [coreState, setCoreState] = useState<"dormant" | "aware" | "focused" | "unlocked">("dormant");
+  const [proximityDist, setProximityDist] = useState(999);
+
+  // Register with WorldEngine
+  useEffect(() => {
+    worldEngine.registerObject({
+      id: "origin_core",
+      name: "MONUMENTAL GEODESIC CORE",
+      type: "core",
+      position: new THREE.Vector3(0, 0, 0),
+      radius: 2.8,
+      proximityThresholds: {
+        aware: 9.0,
+        active: 4.5,
+      },
+      state: "dormant",
+      onAware: (dist) => {
+        setProximityDist(dist);
+        setCoreState((prev) => (prev === "unlocked" ? "unlocked" : prev === "focused" ? "focused" : "aware"));
+      },
+      onLeaveAware: () => {
+        setProximityDist(999);
+        setCoreState((prev) => (prev === "unlocked" ? "unlocked" : "dormant"));
+      },
+      onFocus: () => {
+        setCoreState((prev) => (prev === "unlocked" ? "unlocked" : "focused"));
+      },
+      onBlur: () => {
+        setCoreState((prev) => (prev === "unlocked" ? "unlocked" : "aware"));
+      },
+      onInteract: () => {
+        setCoreState("unlocked");
+        triggerShockwave([0, 0, 0], 2.8);
+        audioEngine.triggerShockwaveImpulse(1.8);
+        worldEngine.recordDiscovery("origin_core", "core");
+      },
+    });
+
+    return () => {
+      worldEngine.unregisterObject("origin_core");
+    };
+  }, [triggerShockwave]);
 
   const uniforms = useMemo(
     () => ({
@@ -101,16 +152,45 @@ export function GeodesicCore() {
     uniforms.uTime.value += delta;
     uniforms.uSeed.value = seed;
 
+    // Reactivity parameters
+    const isAware = coreState !== "dormant";
+    const isFocused = coreState === "focused" || coreState === "unlocked";
+    const isUnlocked = coreState === "unlocked";
+
+    // Dynamic displacement based on awareness
+    const targetDisp = isUnlocked ? 0.55 : isFocused ? 0.44 : isAware ? 0.38 : 0.28;
+    uniforms.uDisplacement.value = THREE.MathUtils.lerp(
+      uniforms.uDisplacement.value,
+      targetDisp,
+      0.08
+    );
+
     // Map pointer to 3D interaction coordinates
     uniforms.uPointer.value.set(pointer.x * 4.5, pointer.y * 3.2, 0);
 
-    // Subtle breathing rotation
-    meshRef.current.rotation.y += delta * 0.18;
+    // Rotation speeds adapt to explorer proximity
+    const rotSpeed = isUnlocked ? 0.45 : isAware ? 0.28 : 0.14;
+    meshRef.current.rotation.y += delta * rotSpeed;
     meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.12;
 
+    // Outer cage expands on focus / unlock
+    if (cageRef.current) {
+      cageRef.current.rotation.y -= delta * 0.22;
+      cageRef.current.rotation.x += delta * 0.11;
+      const targetCageScale = isUnlocked ? 1.35 : isFocused ? 1.2 : 1.0;
+      cageRef.current.scale.lerp(new THREE.Vector3(targetCageScale, targetCageScale, targetCageScale), 0.08);
+    }
+
     if (innerMeshRef.current) {
-      innerMeshRef.current.rotation.y -= delta * 0.35;
-      innerMeshRef.current.rotation.z += delta * 0.22;
+      innerMeshRef.current.rotation.y -= delta * 0.55 * (isAware ? 1.8 : 1.0);
+      innerMeshRef.current.rotation.z += delta * 0.35;
+    }
+
+    if (coreNodeRef.current) {
+      coreNodeRef.current.rotation.x += delta * 0.8;
+      coreNodeRef.current.rotation.y += delta * 0.6;
+      const targetNodeScale = isUnlocked ? 1.0 : 0.001;
+      coreNodeRef.current.scale.lerp(new THREE.Vector3(targetNodeScale, targetNodeScale, targetNodeScale), 0.06);
     }
   });
 
@@ -128,14 +208,14 @@ export function GeodesicCore() {
         />
       </mesh>
 
-      {/* Outer Wireframe Cage */}
-      <mesh rotation={[0.4, 0.2, 0]}>
+      {/* Outer Expandable Wireframe Cage */}
+      <mesh ref={cageRef} rotation={[0.4, 0.2, 0]}>
         <icosahedronGeometry args={[2.35, 2]} />
         <meshBasicMaterial
-          color="#e2e8f0"
+          color={coreState === "unlocked" ? "#e5a93c" : "#e2e8f0"}
           wireframe={true}
           transparent={true}
-          opacity={0.12}
+          opacity={coreState === "unlocked" ? 0.45 : 0.18}
         />
       </mesh>
 
@@ -144,13 +224,41 @@ export function GeodesicCore() {
         <torusKnotGeometry args={[0.9, 0.22, 128, 32, 2, 3]} />
         <meshStandardMaterial
           color="#0d1117"
-          emissive="#e5a93c"
-          emissiveIntensity={0.65}
+          emissive={coreState === "unlocked" ? "#28f0dc" : "#e5a93c"}
+          emissiveIntensity={coreState === "unlocked" ? 1.5 : 0.65}
           roughness={0.2}
           metalness={0.9}
           wireframe={true}
         />
       </mesh>
+
+      {/* Emergent Hyper-Octahedral Core Node (Unlocks on Interaction) */}
+      <mesh ref={coreNodeRef} scale={0.001}>
+        <octahedronGeometry args={[0.75, 0]} />
+        <meshBasicMaterial
+          color="#28f0dc"
+          wireframe={true}
+          transparent={true}
+          opacity={0.9}
+        />
+      </mesh>
+
+      {/* Spatial Information Tag */}
+      <SpatialLabel
+        text="PROCEDURAL CORE // ORIGIN"
+        subtext={
+          coreState === "unlocked"
+            ? "ANOMALY HARMONIZED // 100%"
+            : coreState === "focused"
+            ? "CLICK TO ENERGIZE"
+            : coreState === "aware"
+            ? `PROXIMITY: ${proximityDist.toFixed(1)}M`
+            : "IDLE // APPROACH"
+        }
+        position={[0, 3.4, 0]}
+        color={coreState === "unlocked" ? "#28f0dc" : coreState === "focused" ? "#e5a93c" : "#94a3b8"}
+        distanceFade={[2.0, 16.0]}
+      />
     </group>
   );
 }

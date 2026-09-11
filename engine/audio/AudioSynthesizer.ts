@@ -276,6 +276,147 @@ class ProceduralAudioEngine {
   }
 
   /**
+   * Acoustic impulse triggered when initiating a realm transition
+   */
+  public triggerRealmTransition() {
+    this.triggerShockwaveImpulse(1.2);
+    this.setTransitionSweep(0.4);
+  }
+
+  /**
+   * Machine Stage 1: Resonant metallic turbine torque spin-up
+   */
+  public triggerMachineGearEngagement() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(95, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 1.2);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+
+      osc.connect(gain);
+      if (this.masterGain) gain.connect(this.masterGain);
+      else gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 1.45);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Machine Stage 2: Hydraulic high-pressure steam pulse
+   */
+  public triggerPistonPressureSurge() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      this.triggerShockwaveImpulse(1.4);
+
+      // Filtered noise steam release
+      const bufferSize = this.ctx.sampleRate * 0.5;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-4.0 * (i / bufferSize));
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(1400, now);
+      filter.Q.setValueAtTime(3.5, now);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.48);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      if (this.masterGain) gain.connect(this.masterGain);
+      else gain.connect(this.ctx.destination);
+
+      noise.start(now);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Machine Stage 3: High-voltage electrical harmonic capacitor discharge
+   */
+  public triggerCapacitorDischarge() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      this.triggerShockwaveImpulse(1.6);
+
+      // 1. Ascending harmonic resonance arpeggio
+      const notes = [220.0, 330.0, 440.0, 660.0, 880.0];
+      notes.forEach((freq, i) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now + i * 0.08);
+
+        gain.gain.setValueAtTime(0.0001, now + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + i * 0.08 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.8);
+
+        osc.connect(gain);
+        if (this.masterGain) gain.connect(this.masterGain);
+        else gain.connect(this.ctx!.destination);
+
+        osc.start(now + i * 0.08);
+        osc.stop(now + i * 0.08 + 0.85);
+      });
+
+      // 2. High-voltage electrostatic arc crackle
+      const bufferSize = this.ctx.sampleRate * 0.6;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-3.5 * (i / bufferSize));
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const sparkFilter = this.ctx.createBiquadFilter();
+      sparkFilter.type = "bandpass";
+      sparkFilter.frequency.setValueAtTime(2800, now);
+      sparkFilter.Q.setValueAtTime(6.0, now);
+
+      const sparkGain = this.ctx.createGain();
+      sparkGain.gain.setValueAtTime(0.18, now);
+      sparkGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+
+      noise.connect(sparkFilter);
+      sparkFilter.connect(sparkGain);
+      if (this.masterGain) sparkGain.connect(this.masterGain);
+      else sparkGain.connect(this.ctx.destination);
+
+      noise.start(now);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
    * Forest Realm: Generative Algorithmic Pentatonic Chimes
    */
   private startChimeLoop() {
@@ -348,6 +489,13 @@ class ProceduralAudioEngine {
     } catch {
       // Ignore if interrupted
     }
+  }
+
+  /**
+   * Subtle UI hover beep synthesized on camera mode / button hover
+   */
+  public triggerUIHoverBeep() {
+    this.triggerClickFoley();
   }
 
   /**

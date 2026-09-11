@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import { useWorldStore, RealmId } from "../state/useWorldStore";
 import { audioEngine } from "../audio/AudioSynthesizer";
+import { metamorphosisEngine } from "../metamorphosis/MetamorphosisEngine";
 
 /**
  * VOID Inter-World Transition & Morphing Engine
@@ -19,8 +20,11 @@ class TransitionManager {
     this.isTransitioning = true;
     store.actions.setTargetRealm(targetRealm);
 
-    // Trigger procedural transition sweep sound
-    audioEngine.triggerClickFoley();
+    // Initialize real-time procedural metamorphosis point clouds
+    metamorphosisEngine.beginMorph(currentRealm, targetRealm);
+
+    // Trigger specialized archetypal transmutation soundscape
+    audioEngine.triggerMorphSound(currentRealm, targetRealm);
 
     if (this.timeline) {
       this.timeline.kill();
@@ -31,9 +35,11 @@ class TransitionManager {
     this.timeline = gsap.timeline({
       onUpdate: () => {
         store.actions.setTransitionProgress(stateObj.progress);
+        metamorphosisEngine.updateProgress(stateObj.progress);
         audioEngine.setTransitionSweep(stateObj.progress);
       },
       onComplete: () => {
+        metamorphosisEngine.completeMorph();
         store.actions.setRealm(targetRealm);
         audioEngine.setRealmProfile(targetRealm);
         audioEngine.setTransitionSweep(0);
@@ -50,9 +56,9 @@ class TransitionManager {
     };
     store.actions.announce(realmDescriptions[targetRealm] || `Entered Realm: ${targetRealm}`);
 
-    const duration = store.reducedMotion ? 0.15 : 1.8;
+    const duration = store.reducedMotion ? 0.2 : 2.2;
 
-    // 1. Camera acceleration & dimensional warp phase
+    // Camera acceleration & dimensional transmutation phase
     this.timeline.to(stateObj, {
       progress: 1.0,
       duration,

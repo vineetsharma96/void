@@ -284,6 +284,184 @@ class ProceduralAudioEngine {
   }
 
   /**
+   * Plays specialized procedural soundscape for archetypal world metamorphoses
+   */
+  public triggerMorphSound(fromRealm: RealmId, toRealm: RealmId) {
+    const pair = `${fromRealm}_to_${toRealm}`;
+    if (pair === "forest_to_ocean") {
+      this.triggerFluidMeltSweep();
+    } else if (pair === "ocean_to_machine") {
+      this.triggerCrystallineFreezeClang();
+    } else if (pair === "machine_to_void") {
+      this.triggerSingularityCollapse();
+    } else if (pair === "void_to_origin") {
+      this.triggerBigBangResonance();
+    } else {
+      this.triggerRealmTransition();
+    }
+  }
+
+  /**
+   * Metamorphosis 1: Forest -> Ocean (Botanical dissolution into fluid stream)
+   */
+  public triggerFluidMeltSweep() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Filtered rushing fluid noise
+      const bufferSize = this.ctx.sampleRate * 1.5;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferSize) * Math.PI);
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1200, now);
+      filter.frequency.exponentialRampToValueAtTime(320, now + 1.4);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.18, now + 0.4);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      if (this.masterGain) gain.connect(this.masterGain);
+      else gain.connect(this.ctx.destination);
+
+      noise.start(now);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Metamorphosis 2: Ocean -> Machine (Crystalline wave freezing & mechanical gear snapping)
+   */
+  public triggerCrystallineFreezeClang() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // High-frequency crystalline freeze sweep
+      const freezeOsc = this.ctx.createOscillator();
+      const freezeGain = this.ctx.createGain();
+      freezeOsc.type = "sine";
+      freezeOsc.frequency.setValueAtTime(880, now);
+      freezeOsc.frequency.exponentialRampToValueAtTime(2400, now + 0.35);
+
+      freezeGain.gain.setValueAtTime(0.08, now);
+      freezeGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+
+      freezeOsc.connect(freezeGain);
+      if (this.masterGain) freezeGain.connect(this.masterGain);
+      else freezeGain.connect(this.ctx.destination);
+
+      freezeOsc.start(now);
+      freezeOsc.stop(now + 0.45);
+
+      // Heavy metallic gear impact
+      setTimeout(() => {
+        if (!this.ctx) return;
+        const impactTime = this.ctx.currentTime;
+        const metalOsc = this.ctx.createOscillator();
+        const metalGain = this.ctx.createGain();
+        metalOsc.type = "sawtooth";
+        metalOsc.frequency.setValueAtTime(140, impactTime);
+        metalOsc.frequency.exponentialRampToValueAtTime(45, impactTime + 0.6);
+
+        metalGain.gain.setValueAtTime(0.2, impactTime);
+        metalGain.gain.exponentialRampToValueAtTime(0.0001, impactTime + 0.65);
+
+        metalOsc.connect(metalGain);
+        if (this.masterGain) metalGain.connect(this.masterGain);
+        else metalGain.connect(this.ctx.destination);
+
+        metalOsc.start(impactTime);
+        metalOsc.stop(impactTime + 0.7);
+      }, 350);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Metamorphosis 3: Machine -> Void (Kinetic overload & singularity collapse)
+   */
+  public triggerSingularityCollapse() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Ascending motor whine overload
+      const whineOsc = this.ctx.createOscillator();
+      const whineGain = this.ctx.createGain();
+      whineOsc.type = "sawtooth";
+      whineOsc.frequency.setValueAtTime(180, now);
+      whineOsc.frequency.exponentialRampToValueAtTime(1600, now + 0.65);
+
+      whineGain.gain.setValueAtTime(0.12, now);
+      whineGain.gain.linearRampToValueAtTime(0.25, now + 0.65);
+      whineGain.gain.setValueAtTime(0.0001, now + 0.68); // Sudden vacuum cutoff
+
+      whineOsc.connect(whineGain);
+      if (this.masterGain) whineGain.connect(this.masterGain);
+      else whineGain.connect(this.ctx.destination);
+
+      whineOsc.start(now);
+      whineOsc.stop(now + 0.7);
+
+      // Infrasonic gravitational plunge
+      setTimeout(() => {
+        this.triggerShockwaveImpulse(2.2);
+      }, 680);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Metamorphosis 4: Void -> Origin (Singularity Big Bang detonation)
+   */
+  public triggerBigBangResonance() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      this.triggerShockwaveImpulse(2.5);
+
+      // Full-spectrum harmonic chord expansion (C major triad across octaves)
+      const frequencies = [65.41, 130.81, 196.0, 261.63, 329.63, 392.0, 523.25];
+      frequencies.forEach((freq, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.06, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.2 - idx * 0.1);
+
+        osc.connect(gain);
+        if (this.masterGain) gain.connect(this.masterGain);
+        else gain.connect(this.ctx!.destination);
+
+        osc.start(now);
+        osc.stop(now + 2.3);
+      });
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
    * Machine Stage 1: Resonant metallic turbine torque spin-up
    */
   public triggerMachineGearEngagement() {

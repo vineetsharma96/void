@@ -9,6 +9,7 @@ import { ForestWorld } from "./02_Forest/ForestWorld";
 import { OceanWorld } from "./03_Ocean/OceanWorld";
 import { MachineWorld } from "./04_Machine/MachineWorld";
 import { VoidWorld } from "./05_Void/VoidWorld";
+import { MetamorphosisStream } from "@/components/canvas/MetamorphosisStream";
 
 function TransitTunnel() {
   const pointsRef = useRef<THREE.Points>(null);
@@ -73,6 +74,7 @@ function TransitTunnel() {
   );
 }
 
+
 export function WorldManager() {
   const currentRealm = useWorldStore((s) => s.currentRealm);
   const targetRealm = useWorldStore((s) => s.targetRealm);
@@ -82,19 +84,30 @@ export function WorldManager() {
   const targetGroupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
-    // Continuous morphing scale and position offsets during transition
+    // In-place mathematical dissolution and reconstitution
     if (targetRealm) {
-      const outgoingProgress = transitionProgress; // 0 to 1
-      const incomingProgress = 1 - transitionProgress; // 1 to 0
+      const t = transitionProgress; // 0 to 1
 
       if (currentGroupRef.current) {
-        currentGroupRef.current.position.z = -outgoingProgress * 15;
-        currentGroupRef.current.scale.setScalar(Math.max(0.001, 1.0 - outgoingProgress * 0.5));
+        // Outgoing realm dissolves into the metamorphosis stream during t in [0, 0.45]
+        if (t <= 0.45) {
+          const dissolveScale = 1.0 - (t / 0.45);
+          currentGroupRef.current.scale.setScalar(Math.max(0.001, dissolveScale));
+          currentGroupRef.current.position.y = -t * 4.0;
+        } else {
+          currentGroupRef.current.scale.setScalar(0.001);
+        }
       }
 
       if (targetGroupRef.current) {
-        targetGroupRef.current.position.z = incomingProgress * 20;
-        targetGroupRef.current.scale.setScalar(Math.max(0.001, 1.0 - incomingProgress * 0.5));
+        // Incoming realm materializes out of the stream during t in [0.55, 1.0]
+        if (t >= 0.55) {
+          const materializeScale = (t - 0.55) / 0.45;
+          targetGroupRef.current.scale.setScalar(Math.max(0.001, materializeScale));
+          targetGroupRef.current.position.y = (1.0 - materializeScale) * 4.0;
+        } else {
+          targetGroupRef.current.scale.setScalar(0.001);
+        }
       }
     } else {
       if (currentGroupRef.current) {
@@ -128,6 +141,9 @@ export function WorldManager() {
           {renderRealm(targetRealm)}
         </group>
       )}
+
+      {/* Real-time 12,000-Particle Analytical Metamorphosis Stream */}
+      <MetamorphosisStream />
 
       {/* Inter-Dimensional Quantum Warp Transit Tunnel */}
       <TransitTunnel />

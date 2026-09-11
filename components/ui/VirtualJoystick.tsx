@@ -112,6 +112,11 @@ export function VirtualJoystick() {
       className={`fixed bottom-24 left-5 z-40 w-24 h-24 rounded-full border border-void-700/60 bg-void-950/70 backdrop-blur-md flex items-center justify-center pointer-events-auto touch-none select-none transition-opacity duration-300 md:hidden ${
         isActive ? "opacity-95 ring-2 ring-ion-cyan/40" : "opacity-65"
       }`}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerMove={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      onPointerCancel={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

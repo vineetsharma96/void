@@ -59,7 +59,19 @@ export function MachineWorld() {
     }
 
     if (surgeLightRef.current) {
-      surgeLightRef.current.intensity = machineState.capacitorEngaged ? 5.2 : 2.2;
+      const targetSurgeIntensity = machineState.capacitorEngaged
+        ? 2.8
+        : machineState.pistonsEngaged
+        ? 1.2
+        : 0.4;
+      surgeLightRef.current.intensity = THREE.MathUtils.lerp(
+        surgeLightRef.current.intensity,
+        targetSurgeIntensity,
+        delta * 3.0
+      );
+      surgeLightRef.current.color.set(
+        machineState.capacitorEngaged ? "#28f0dc" : "#e5a93c"
+      );
     }
 
     if (portalLightRef.current) {
@@ -196,7 +208,7 @@ export function MachineWorld() {
       <directionalLight position={[10, 20, 15]} color="#c8f0ee" intensity={1.5} />
       <directionalLight position={[-15, -10, -10]} color="#1e2638" intensity={1.0} />
       <pointLight ref={coreLightRef} position={[0, 0, 0.5]} color="#e5a93c" intensity={3.0} distance={18} />
-      <pointLight ref={surgeLightRef} position={[0, -4, 2]} color="#ff4400" intensity={2.2} distance={14} />
+      <pointLight ref={surgeLightRef} position={[0, -4, 2]} color="#e5a93c" intensity={0.4} distance={14} />
       <pointLight ref={portalLightRef} position={[0, 0.5, 7.2]} color="#28f0dc" intensity={0} distance={16} />
     </group>
   );

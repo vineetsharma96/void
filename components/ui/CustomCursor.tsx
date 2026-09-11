@@ -31,10 +31,21 @@ export function CustomCursor() {
 
   useEffect(() => {
     // Detect touch primary device
-    if (window.matchMedia("(pointer: coarse)").matches) {
+    const checkIsTouch = () => {
+      return (
+        window.matchMedia("(pointer: coarse)").matches ||
+        navigator.maxTouchPoints > 0 ||
+        "ontouchstart" in window
+      );
+    };
+
+    if (checkIsTouch()) {
       setIsTouchDevice(true);
       return;
     }
+
+    const onTouch = () => setIsTouchDevice(true);
+    window.addEventListener("touchstart", onTouch, { once: true, passive: true });
 
     const handleMouseMove = (e: MouseEvent) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
@@ -74,6 +85,7 @@ export function CustomCursor() {
     animationFrameId = requestAnimationFrame(render);
 
     return () => {
+      window.removeEventListener("touchstart", onTouch);
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
@@ -85,7 +97,7 @@ export function CustomCursor() {
   const isInteract = reticleMode === "interact";
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden select-none">
+    <div className="hidden md:block pointer-events-none fixed inset-0 z-50 overflow-hidden select-none">
       {/* Central Micro Dot */}
       <div
         ref={dotRef}

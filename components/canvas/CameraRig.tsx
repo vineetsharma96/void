@@ -15,6 +15,7 @@ export function CameraRig() {
   const transitionProgress = useWorldStore((s) => s.transitionProgress);
   const dollyOffset = useWorldStore((s) => s.dollyOffset);
   const gyro = useWorldStore((s) => s.gyro);
+  const touch = useWorldStore((s) => s.touch);
   const reducedMotion = useWorldStore((s) => s.reducedMotion);
   const setMoveInput = useWorldStore((s) => s.actions.setMoveInput);
 
@@ -145,15 +146,22 @@ export function CameraRig() {
     // FREE EXPLORATION MODE (WASD + Mouse-Look + Spatial Kinematics)
     // ─────────────────────────────────────────────────────────────
     if (cameraMode === "explore") {
-      if (pointer.isDown) {
+      const isMultiTouch = touch.touchCount > 1;
+      if (pointer.isDown && !isMultiTouch) {
         if (!isDragging.current) {
           isDragging.current = true;
           prevPointer.current = { x: pointer.x, y: pointer.y };
         } else {
-          const dx = (pointer.x - prevPointer.current.x) * 450;
-          const dy = (pointer.y - prevPointer.current.y) * 450;
+          const dx = pointer.x - prevPointer.current.x;
+          const dy = pointer.y - prevPointer.current.y;
           prevPointer.current = { x: pointer.x, y: pointer.y };
-          explorerController.addLookDelta(dx, dy);
+
+          // Discontinuous jump guard on mobile touch
+          if (Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
+            const lookDx = dx * 450;
+            const lookDy = dy * 450;
+            explorerController.addLookDelta(lookDx, lookDy);
+          }
         }
       } else {
         isDragging.current = false;
@@ -171,7 +179,8 @@ export function CameraRig() {
     }
 
     // Interactive 360-Degree Spherical Drag Control
-    if (pointer.isDown) {
+    const isMultiTouch = touch.touchCount > 1;
+    if (pointer.isDown && !isMultiTouch) {
       if (!isDragging.current) {
         isDragging.current = true;
         prevPointer.current = { x: pointer.x, y: pointer.y };
@@ -180,13 +189,16 @@ export function CameraRig() {
         const dy = pointer.y - prevPointer.current.y;
         prevPointer.current = { x: pointer.x, y: pointer.y };
 
-        // Continuous 360-degree horizontal azimuth & clamped vertical pitch
-        targetAzimuth.current -= dx * 3.6;
-        targetElevation.current = THREE.MathUtils.clamp(
-          targetElevation.current - dy * 2.6,
-          -1.42,
-          1.42
-        );
+        // Discontinuous jump guard on mobile touch
+        if (Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
+          // Continuous 360-degree horizontal azimuth & clamped vertical pitch
+          targetAzimuth.current -= dx * 3.6;
+          targetElevation.current = THREE.MathUtils.clamp(
+            targetElevation.current - dy * 2.6,
+            -1.42,
+            1.42
+          );
+        }
       }
     } else {
       isDragging.current = false;
@@ -198,9 +210,10 @@ export function CameraRig() {
       }
     }
 
-    // Gyroscopic tilt contribution
-    const gyroAzimuth = gyro.active && !reducedMotion ? (gyro.gamma / 45) * 0.35 : 0;
-    const gyroElevation = gyro.active && !reducedMotion ? (gyro.beta / 45) * 0.25 : 0;
+    // Gyroscopic tilt contribution (active only when not actively dragging with fingers)
+    const canUseGyro = gyro.active && !reducedMotion && !isDragging.current;
+    const gyroAzimuth = canUseGyro ? (gyro.gamma / 35) * 0.35 : 0;
+    const gyroElevation = canUseGyro ? (gyro.beta / 35) * 0.25 : 0;
 
     // Smooth spherical angle interpolation
     azimuth.current = THREE.MathUtils.lerp(

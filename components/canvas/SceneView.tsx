@@ -52,7 +52,8 @@ export function SceneView() {
   );
 
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    interactionEngine.handlePointerDown(e.clientX, e.clientY);
+    const rect = e.currentTarget.getBoundingClientRect();
+    interactionEngine.handlePointerDown(e.clientX, e.clientY, rect);
   }, []);
 
   const handlePointerUp = useCallback(() => {

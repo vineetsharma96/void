@@ -22,8 +22,8 @@ export function MachineParticles() {
   const material = useMemo(() => {
     return ProceduralParticleEngine.createMaterial({
       behavior: "vortex",
-      colorCore: "#e5a93c", // Amber plasma
-      colorEdge: "#ff5500", // Hot exhaust spark
+      colorCore: "#e5a93c", // Amber plasma core
+      colorEdge: "#38bdf8", // Ionized cyan electrical spark
       speed: 1.4,
       seed: seed + 773,
     });

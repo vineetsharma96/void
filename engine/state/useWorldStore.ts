@@ -50,6 +50,14 @@ export interface WorldState {
     capacitorEngaged: boolean;
     gatewayActive: boolean;
   };
+
+  // Forest Realm Multi-Stage Biological Chain Reaction
+  forestState: {
+    bioCoreAwakened: boolean;
+    myceliumPulsing: boolean;
+    lotusBloom: boolean;
+    portalActive: boolean;
+  };
   
   // Interaction & Raycast Pointer
   pointer: {
@@ -134,6 +142,9 @@ export interface WorldState {
     engageMachineGears: () => void;
     engageMachinePistons: () => void;
     engageMachineCapacitor: () => void;
+    awakenBioCore: () => void;
+    pulseMycelium: () => void;
+    bloomSolarLotus: () => void;
   };
 }
 
@@ -181,6 +192,14 @@ export const useWorldStore = create<WorldState>((set, get) => ({
     pistonsEngaged: false,
     capacitorEngaged: false,
     gatewayActive: false,
+  },
+
+  // Forest Realm Multi-Stage Biological Chain Reaction
+  forestState: {
+    bioCoreAwakened: false,
+    myceliumPulsing: false,
+    lotusBloom: false,
+    portalActive: false,
   },
 
   pointer: {
@@ -322,6 +341,18 @@ export const useWorldStore = create<WorldState>((set, get) => ({
     engageMachineCapacitor: () =>
       set((state) => ({
         machineState: { ...state.machineState, capacitorEngaged: true, gatewayActive: true },
+      })),
+    awakenBioCore: () =>
+      set((state) => ({
+        forestState: { ...state.forestState, bioCoreAwakened: true },
+      })),
+    pulseMycelium: () =>
+      set((state) => ({
+        forestState: { ...state.forestState, myceliumPulsing: true },
+      })),
+    bloomSolarLotus: () =>
+      set((state) => ({
+        forestState: { ...state.forestState, lotusBloom: true, portalActive: true },
       })),
   },
 }));

@@ -309,7 +309,7 @@ export function PistonLattice() {
         {/* Needle */}
         <mesh ref={gaugeNeedleRef} position={[0, 0, 0.32]}>
           <planeGeometry args={[0.04, 0.22]} />
-          <meshBasicMaterial color={isEngaged ? "#ff4400" : "#28f0dc"} />
+          <meshBasicMaterial color={isEngaged ? "#e5a93c" : "#28f0dc"} />
         </mesh>
       </group>
 

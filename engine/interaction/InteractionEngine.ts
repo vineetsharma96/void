@@ -28,6 +28,8 @@ export class InteractionEngine {
 
   // Gyroscope tracking
   private gyroActive: boolean = false;
+  private initialBeta: number | null = null;
+  private initialGamma: number | null = null;
   private targetGamma: number = 0; // Roll (-90 to 90)
   private targetBeta: number = 0;  // Pitch (-180 to 180)
   private smoothGamma: number = 0;
@@ -73,7 +75,7 @@ export class InteractionEngine {
   /**
    * Pointer down handler
    */
-  public handlePointerDown(clientX: number, clientY: number) {
+  public handlePointerDown(clientX: number, clientY: number, rect?: DOMRect) {
     this.lastX = clientX;
     this.lastY = clientY;
     this.lastTime = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -81,7 +83,13 @@ export class InteractionEngine {
     this.vy = 0;
 
     const store = useWorldStore.getState();
-    store.actions.updatePointer({ isDown: true });
+    if (rect && rect.width > 0 && rect.height > 0) {
+      const normX = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const normY = -(((clientY - rect.top) / rect.height) * 2 - 1);
+      store.actions.updatePointer({ x: normX, y: normY, isDown: true });
+    } else {
+      store.actions.updatePointer({ isDown: true });
+    }
     store.actions.setHasInteracted();
 
     // Auto-request gyro permission on user interaction if not yet started
@@ -125,11 +133,23 @@ export class InteractionEngine {
       this.touchStartX = touches[0].clientX;
       this.touchStartY = touches[0].clientY;
       this.touchStartTime = typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      const target = e.currentTarget;
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const normX = ((touches[0].clientX - rect.left) / rect.width) * 2 - 1;
+          const normY = -(((touches[0].clientY - rect.top) / rect.height) * 2 - 1);
+          store.actions.updatePointer({ x: normX, y: normY, isDown: true });
+        }
+      }
     } else if (touches.length >= 2) {
       this.isMultiTouch = true;
       const dx = touches[0].clientX - touches[1].clientX;
       const dy = touches[0].clientY - touches[1].clientY;
       this.initialPinchDist = Math.sqrt(dx * dx + dy * dy);
+      // Disengage single-finger camera drag during multi-finger pinch
+      store.actions.updatePointer({ isDown: false });
     }
   }
 
@@ -244,11 +264,22 @@ export class InteractionEngine {
       (e: DeviceOrientationEvent) => {
         if (e.gamma === null && e.beta === null) return;
 
+        // Calibrate initial resting orientation so initial touch never snaps the camera
+        if (this.initialBeta === null && e.beta !== null) {
+          this.initialBeta = e.beta;
+        }
+        if (this.initialGamma === null && e.gamma !== null) {
+          this.initialGamma = e.gamma;
+        }
+
+        const relGamma = (e.gamma || 0) - (this.initialGamma ?? (e.gamma || 0));
+        const relBeta = (e.beta || 0) - (this.initialBeta ?? (e.beta || 0));
+
         this.gyroActive = true;
-        // Gamma: tilt left/right (-90 to 90) -> clamp to -45 to 45
-        this.targetGamma = Math.max(-45, Math.min(45, e.gamma || 0));
-        // Beta: tilt front/back (-180 to 180) -> clamp to -45 to 45
-        this.targetBeta = Math.max(-45, Math.min(45, e.beta || 0));
+        // Gamma: tilt left/right -> clamp to -35 to 35
+        this.targetGamma = Math.max(-35, Math.min(35, relGamma));
+        // Beta: tilt front/back -> clamp to -35 to 35
+        this.targetBeta = Math.max(-35, Math.min(35, relBeta));
 
         // Smooth orientation values
         this.smoothGamma += (this.targetGamma - this.smoothGamma) * 0.15;

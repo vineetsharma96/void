@@ -768,6 +768,126 @@ class ProceduralAudioEngine {
   }
 
   /**
+   * Station 01: Mother Tree Bio-Core Pulse
+   * Low-frequency organic heartbeat + sparkling emerald bio-shimmer
+   */
+  public triggerBioCorePulse() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Deep biological fundamental pulse (55Hz sine)
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(75, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.6);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.35, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+
+      osc.connect(gain);
+      if (this.masterGain) gain.connect(this.masterGain);
+      else gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.95);
+
+      // Sparkling high-overtone bio-chime
+      const chimeOsc = this.ctx.createOscillator();
+      const chimeGain = this.ctx.createGain();
+      chimeOsc.type = "sine";
+      chimeOsc.frequency.setValueAtTime(880, now);
+      chimeOsc.frequency.exponentialRampToValueAtTime(1320, now + 0.4);
+
+      chimeGain.gain.setValueAtTime(0.0001, now);
+      chimeGain.gain.linearRampToValueAtTime(0.08, now + 0.04);
+      chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+      chimeOsc.connect(chimeGain);
+      if (this.masterGain) chimeGain.connect(this.masterGain);
+      else chimeGain.connect(this.ctx.destination);
+
+      chimeOsc.start(now);
+      chimeOsc.stop(now + 0.55);
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Station 02: Mycelium Network Fungal Pentatonic Bell Chime
+   */
+  public triggerFungalChime() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Pentatonic organic frequencies [E5, G5, A5, C6]
+      const notes = [659.25, 783.99, 880.0, 1046.5];
+      notes.forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const noteTime = now + idx * 0.06;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, noteTime);
+
+        gain.gain.setValueAtTime(0.0001, noteTime);
+        gain.gain.linearRampToValueAtTime(0.09, noteTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.45);
+
+        osc.connect(gain);
+        if (this.masterGain) gain.connect(this.masterGain);
+        else gain.connect(this.ctx.destination);
+
+        osc.start(noteTime);
+        osc.stop(noteTime + 0.48);
+      });
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
+   * Station 03: Solar Lotus Unfurl & Celestial Light Ascension
+   */
+  public triggerLotusBloom() {
+    if (!this.isInitialized || !this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Ascending celestial chord with shimmer
+      const freqs = [329.63, 440.0, 554.37, 659.25, 880.0];
+      freqs.forEach((f, idx) => {
+        if (!this.ctx) return;
+        const noteTime = now + idx * 0.08;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(f, noteTime);
+        osc.frequency.exponentialRampToValueAtTime(f * 1.5, noteTime + 0.8);
+
+        gain.gain.setValueAtTime(0.0001, noteTime);
+        gain.gain.linearRampToValueAtTime(0.07, noteTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.9);
+
+        osc.connect(gain);
+        if (this.masterGain) gain.connect(this.masterGain);
+        else gain.connect(this.ctx.destination);
+
+        osc.start(noteTime);
+        osc.stop(noteTime + 0.95);
+      });
+    } catch {
+      // Audio interrupted
+    }
+  }
+
+  /**
    * Real-time spectrum analysis for visualizers
    * Returns [Sub, Low, Mid, High] normalized amplitudes (0.0 to 1.0)
    */

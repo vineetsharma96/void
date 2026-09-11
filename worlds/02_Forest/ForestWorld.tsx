@@ -10,10 +10,17 @@ import { terrainVertexShader, terrainFragmentShader } from "@/shaders/terrain/te
 import { ProceduralMaterials } from "@/procedural/materials/ProceduralMaterials";
 import { ProceduralParticleEngine } from "@/procedural/particles/ParticleEngine";
 
+import { MotherTree } from "./MotherTree";
+import { MyceliumRing } from "./MyceliumRing";
+import { SolarLotus } from "./SolarLotus";
+import { WorldPortal } from "@/components/canvas/WorldPortal";
+import { EnergyConduit } from "@/components/canvas/EnergyConduit";
+
 export function ForestWorld() {
   const seed = useWorldStore((s) => s.seed);
   const pointer = useWorldStore((s) => s.pointer);
   const quality = useWorldStore((s) => s.quality);
+  const forestState = useWorldStore((s) => s.forestState);
 
   const forestGroupRef = useRef<THREE.Group>(null);
   const foliageMeshRef = useRef<THREE.InstancedMesh>(null);
@@ -237,10 +244,81 @@ export function ForestWorld() {
       {/* Drifting Bio-luminescent Spores */}
       <points ref={sporesRef} geometry={sporeGeometry} material={sporeMaterial} position={[0, 2, 0]} />
 
+      {/* Station 01: Ancient Mother Tree & Bio-Core */}
+      <MotherTree />
+
+      {/* Station 02: Fibonacci Mycelium Fungal Ring */}
+      <MyceliumRing position={[-6.8, -1.2, 3.5]} />
+
+      {/* Station 03: Sunken Phyllotaxis Solar Lotus */}
+      <SolarLotus position={[7.2, -1.1, 3.2]} />
+
+      {/* Procedural Bioluminescent Energy Conduits */}
+      {/* Station 01 (Mother Tree) -> Station 02 (Mycelium Ring) */}
+      <EnergyConduit
+        start={[0, -0.6, 0]}
+        end={[-6.8, -0.6, 3.5]}
+        midpointOffset={[-3.4, 0.4, 1.8]}
+        color="#2eed86"
+        active={forestState.bioCoreAwakened}
+      />
+
+      {/* Station 01 (Mother Tree) -> Station 03 (Solar Lotus) */}
+      <EnergyConduit
+        start={[0, -0.6, 0]}
+        end={[7.2, -0.6, 3.2]}
+        midpointOffset={[3.6, 0.4, 1.6]}
+        color="#2eed86"
+        active={forestState.bioCoreAwakened}
+      />
+
+      {/* Station 02 (Mycelium Ring) -> Station 03 (Solar Lotus) */}
+      <EnergyConduit
+        start={[-6.8, -0.6, 3.5]}
+        end={[7.2, -0.6, 3.2]}
+        midpointOffset={[0.2, 0.6, 5.2]}
+        color="#38bdf8"
+        active={forestState.myceliumPulsing}
+      />
+
+      {/* Station 03 (Solar Lotus) -> Station 04 (Ocean Gateway Portal) */}
+      <EnergyConduit
+        start={[7.2, -0.6, 3.2]}
+        end={[0, 0.4, 8.8]}
+        midpointOffset={[3.6, 0.6, 6.0]}
+        color="#28f0dc"
+        active={forestState.lotusBloom}
+      />
+
+      {/* Station 02 (Mycelium Ring) -> Station 04 (Ocean Gateway Portal) */}
+      <EnergyConduit
+        start={[-6.8, -0.6, 3.5]}
+        end={[0, 0.4, 8.8]}
+        midpointOffset={[-3.4, 0.6, 6.0]}
+        color="#28f0dc"
+        active={forestState.lotusBloom}
+      />
+
+      {/* Station 04: Gateway Portal to Realm 03 (OCEAN) */}
+      <WorldPortal
+        id="portal_forest_to_ocean"
+        name="OCEAN ARCHWAY"
+        targetRealm="ocean"
+        position={[0, 0.4, 8.8]}
+        color="#28f0dc"
+        locked={!forestState.portalActive}
+        lockedSubtext="LOCKED // UNFURL SOLAR LOTUS (STAGE 03)"
+      />
+
       {/* Atmospheric Forest Lighting */}
       <ambientLight color="#051410" intensity={0.9} />
       <directionalLight position={[10, 15, 8]} color="#98f7c5" intensity={1.5} />
-      <pointLight position={[0, 3, 0]} color="#2eed86" intensity={2.8} distance={20} />
+      <pointLight
+        position={[0, 3, 0]}
+        color={forestState.lotusBloom ? "#28f0dc" : forestState.bioCoreAwakened ? "#2eed86" : "#0d3824"}
+        intensity={forestState.lotusBloom ? 3.8 : 2.5}
+        distance={24}
+      />
       <pointLight position={[-8, 2, -6]} color="#c8f0ee" intensity={1.8} distance={15} />
     </group>
   );

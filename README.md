@@ -43,20 +43,16 @@ Every single vertex, normal, UV coordinate, color spectrum, atmospheric particle
 - **Surface Simulation**: 4-octave Gerstner wave displacement equations calculating exact non-linear crest sharpening:
   
 
-\[
-\boxed{
-\vec{P}
-=
+$$
+\vec{P} =
 \left(
-x+\sum_i Q_i A_i D_{i,x}\cos\left(\vec{D}_i\cdot\vec{x}-\omega_i t\right),
+x + \sum_i Q_i A_i D_{i,x} \cos\left(\vec{D}_i \cdot \vec{x} - \omega_i t\right),
 \;
-\sum_i A_i\sin\left(\vec{D}_i\cdot\vec{x}-\omega_i t\right),
+\sum_i A_i \sin\left(\vec{D}_i \cdot \vec{x} - \omega_i t\right),
 \;
-z+\sum_i Q_i A_i D_{i,z}\cos\left(\vec{D}_i\cdot\vec{x}-\omega_i t\right)
+z + \sum_i Q_i A_i D_{i,z} \cos\left(\vec{D}_i \cdot \vec{x} - \omega_i t\right)
 \right)
-}
-\]
-
+$$
 
 - **Optics**: Beer-Lambert absorption law simulating deep-water light attenuation and peak foam jacobian thresholds.
 - **Atmosphere**: Sea spray mist particles driven by wind velocity and orbital sea surface turbulence.

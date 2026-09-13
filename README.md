@@ -41,7 +41,23 @@ Every single vertex, normal, UV coordinate, color spectrum, atmospheric particle
 
 ### 03. OCEAN — The Gerstner Fluid Field
 - **Surface Simulation**: 4-octave Gerstner wave displacement equations calculating exact non-linear crest sharpening:
-  $$\vec{P} = \left( x + \sum Q_i A_i D_{i,x} \cos(\vec{D}_i \cdot \vec{x} - \omega_i t), \; \sum A_i \sin(\vec{D}_i \cdot \vec{x} - \omega_i t), \; z + \sum Q_i A_i D_{i,z} \cos(\vec{D}_i \cdot \vec{x} - \omega_i t) \right)$$
+  
+
+\[
+\boxed{
+\vec{P}
+=
+\left(
+x+\sum_i Q_i A_i D_{i,x}\cos\left(\vec{D}_i\cdot\vec{x}-\omega_i t\right),
+\;
+\sum_i A_i\sin\left(\vec{D}_i\cdot\vec{x}-\omega_i t\right),
+\;
+z+\sum_i Q_i A_i D_{i,z}\cos\left(\vec{D}_i\cdot\vec{x}-\omega_i t\right)
+\right)
+}
+\]
+
+
 - **Optics**: Beer-Lambert absorption law simulating deep-water light attenuation and peak foam jacobian thresholds.
 - **Atmosphere**: Sea spray mist particles driven by wind velocity and orbital sea surface turbulence.
 - **Acoustics**: Low $E\flat$ subterranean undertow with periodic white-noise tidal surf swells.

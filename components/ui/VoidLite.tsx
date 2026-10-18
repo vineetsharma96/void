@@ -18,7 +18,6 @@ export function VoidLite() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentRealm = useWorldStore((s) => s.currentRealm);
   const seed = useWorldStore((s) => s.seed);
-  const pointer = useWorldStore((s) => s.pointer);
   const reducedMotion = useWorldStore((s) => s.reducedMotion);
   const toggleLiteFallback = useWorldStore((s) => s.actions.toggleLiteFallback);
 
@@ -99,6 +98,7 @@ export function VoidLite() {
     let time = 0;
 
     const render = () => {
+      const pointer = useWorldStore.getState().pointer;
       // Time delta scaled by reducedMotion setting
       const dt = reducedMotion ? 0.004 : 0.016;
       time += dt;
@@ -347,7 +347,7 @@ export function VoidLite() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [currentRealm, seed, pointer, reducedMotion]);
+  }, [currentRealm, seed, reducedMotion]);
 
   return (
     <div className="relative w-full h-full inset-0 overflow-hidden bg-void-950 select-none touch-none">

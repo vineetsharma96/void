@@ -8,23 +8,32 @@ import { Volume2, VolumeX, Sliders } from "lucide-react";
 export function AudioToggle() {
   const audioEnabled = useWorldStore((s) => s.audioEnabled);
   const audioVolume = useWorldStore((s) => s.audioVolume);
+  const hudCollapsed = useWorldStore((s) => s.hudCollapsed);
   const toggleAudio = useWorldStore((s) => s.actions.toggleAudio);
   const setAudioVolume = useWorldStore((s) => s.actions.setAudioVolume);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [bands, setBands] = useState<[number, number, number, number]>([0, 0, 0, 0]);
+  const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const animRef = useRef<number | null>(null);
 
-  // Sample live frequency bands for the real-time visualizer
+  // Sample live frequency bands directly into DOM refs (zero React re-renders per frame)
   useEffect(() => {
     if (!audioEnabled) {
-      setBands([0, 0, 0, 0]);
+      barRefs.current.forEach((bar) => {
+        if (bar) bar.style.transform = "scaleY(0.15)";
+      });
       return;
     }
 
     const updateVisualizer = () => {
       const data = audioEngine.getFrequencyBands();
-      setBands(data);
+      for (let i = 0; i < 4; i++) {
+        const bar = barRefs.current[i];
+        if (bar) {
+          const scale = Math.max(0.15, Math.min(1, data[i]));
+          bar.style.transform = `scaleY(${scale})`;
+        }
+      }
       animRef.current = requestAnimationFrame(updateVisualizer);
     };
 
@@ -50,9 +59,11 @@ export function AudioToggle() {
     audioEngine.setVolume(val);
   };
 
+  if (hudCollapsed) return null;
+
   return (
     <div
-      className="fixed top-3 sm:top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto font-mono select-none flex items-center gap-1 sm:gap-2"
+      className="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-20 pointer-events-auto font-sans select-none flex items-center gap-1.5 tabular-nums"
       onMouseEnter={() => setShowVolumeSlider(true)}
       onMouseLeave={() => setShowVolumeSlider(false)}
     >
@@ -60,49 +71,43 @@ export function AudioToggle() {
         onClick={handleToggle}
         aria-label={audioEnabled ? "Mute procedural audio synthesizer" : "Enable procedural audio synthesizer"}
         aria-pressed={audioEnabled}
-        className={`flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border text-[10px] sm:text-xs tracking-wider transition-all backdrop-blur-md focus-visible:ring-2 focus-visible:ring-amber-glow focus-visible:outline-none ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors duration-200 active:scale-[0.98] whitespace-nowrap shrink-0 focus-visible:ring-2 focus-visible:ring-amber-glow focus-visible:outline-none ${
           audioEnabled
-            ? "bg-void-950/80 border-amber-glow/60 text-amber-glow shadow-[0_0_15px_rgba(229,169,60,0.2)]"
-            : "bg-void-950/60 border-void-800 text-void-400 hover:text-void-200"
+            ? "bg-void-850 text-amber-glow"
+            : "bg-void-900/90 text-void-300 hover:text-void-100 hover:bg-void-800"
         }`}
         title={audioEnabled ? "Mute Procedural Audio" : "Enable Procedural Audio"}
       >
         {audioEnabled ? (
           <>
             <Volume2 className="w-3.5 h-3.5 text-amber-glow" />
-            <span className="text-[10px] font-medium hidden sm:inline">AUDIO ON</span>
-            {/* Live real-time AnalyserNode frequency spectrum bars */}
-            <div className="flex items-end gap-0.5 h-3.5 ml-0.5 sm:ml-1">
-              <span
-                className="w-0.5 bg-amber-glow transition-all duration-75 rounded-t"
-                style={{ height: `${Math.max(2, bands[0] * 14)}px` }}
-              />
-              <span
-                className="w-0.5 bg-amber-glow transition-all duration-75 rounded-t"
-                style={{ height: `${Math.max(2, bands[1] * 14)}px` }}
-              />
-              <span
-                className="w-0.5 bg-amber-glow transition-all duration-75 rounded-t"
-                style={{ height: `${Math.max(2, bands[2] * 14)}px` }}
-              />
-              <span
-                className="w-0.5 bg-amber-glow transition-all duration-75 rounded-t"
-                style={{ height: `${Math.max(2, bands[3] * 14)}px` }}
-              />
+            <span className="hidden sm:inline">Audio On</span>
+            {/* GPU-safe transform scaleY frequency spectrum bars */}
+            <div className="flex items-end gap-0.5 h-3.5 ml-0.5">
+              {[0, 1, 2, 3].map((idx) => (
+                <span
+                  key={idx}
+                  ref={(el) => {
+                    barRefs.current[idx] = el;
+                  }}
+                  className="w-0.5 h-3.5 bg-amber-glow origin-bottom transition-transform duration-75 rounded-t"
+                  style={{ transform: "scaleY(0.2)" }}
+                />
+              ))}
             </div>
           </>
         ) : (
           <>
-            <VolumeX className="w-3.5 h-3.5 text-void-500" />
-            <span className="text-[10px] hidden sm:inline">SOUND OFF</span>
+            <VolumeX className="w-3.5 h-3.5 text-void-400" />
+            <span className="hidden sm:inline">Sound Off</span>
           </>
         )}
       </button>
 
       {/* Volume Slider Popup on Hover */}
-      {audioEnabled && showVolumeSlider && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-void-950/80 border border-void-800 backdrop-blur-md rounded-full text-[9px] text-void-300">
-          <Sliders className="w-2.5 h-2.5 text-ion-cyan" />
+      {audioEnabled && showVolumeSlider ? (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-void-900 rounded-full text-xs text-void-300">
+          <Sliders className="w-3 h-3 text-ion-cyan" />
           <input
             type="range"
             min="0.05"
@@ -114,7 +119,7 @@ export function AudioToggle() {
           />
           <span>{Math.round(audioVolume * 100)}%</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

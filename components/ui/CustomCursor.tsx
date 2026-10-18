@@ -6,8 +6,8 @@ import { useWorldStore } from "@/engine/state/useWorldStore";
 export function CustomCursor() {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const pointer = useWorldStore((s) => s.pointer);
-  const shockwave = useWorldStore((s) => s.shockwave);
+  const isPointerDown = useWorldStore((s) => s.pointer.isDown);
+  const shockwaveTime = useWorldStore((s) => s.shockwave.time);
   const focusedObjectId = useWorldStore((s) => s.focusedObjectId);
   const reticleMode = useWorldStore((s) => s.reticleMode);
   const [rippleActive, setRippleActive] = useState(false);
@@ -21,16 +21,15 @@ export function CustomCursor() {
 
   // Trigger shockwave visual ripple on canvas click/tap
   useEffect(() => {
-    if (shockwave.time > 0) {
+    if (shockwaveTime > 0) {
       ripplePos.current = { x: mousePos.current.x, y: mousePos.current.y };
       setRippleActive(true);
-      const timer = setTimeout(() => setRippleActive(false), 500);
+      const timer = setTimeout(() => setRippleActive(false), 450);
       return () => clearTimeout(timer);
     }
-  }, [shockwave.time]);
+  }, [shockwaveTime]);
 
   useEffect(() => {
-    // Detect touch primary device
     const checkIsTouch = () => {
       return (
         window.matchMedia("(pointer: coarse)").matches ||
@@ -50,25 +49,26 @@ export function CustomCursor() {
     const handleMouseMove = (e: MouseEvent) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
 
-      // Detect if hovering over clickable elements
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "BUTTON" || target.tagName === "A" || target.closest("button") || target.closest("a"))) {
-        setIsHovered(true);
-      } else {
-        setIsHovered(false);
-      }
+      const clickable = Boolean(
+        target &&
+          (target.tagName === "BUTTON" ||
+            target.tagName === "A" ||
+            target.closest("button") ||
+            target.closest("a"))
+      );
+      setIsHovered((prev) => (prev !== clickable ? clickable : prev));
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
 
     let animationFrameId: number;
     const render = () => {
-      // Smooth lerp for trailing ring
       ringPos.current.x += (mousePos.current.x - ringPos.current.x) * 0.22;
       ringPos.current.y += (mousePos.current.y - ringPos.current.y) * 0.22;
 
       const isTargeted = isHovered || focusedObjectId !== null;
-      const targetSize = isTargeted ? 28 : 16;
+      const targetSize = isTargeted ? 24 : 16;
 
       if (dotRef.current) {
         dotRef.current.style.transform = `translate3d(${mousePos.current.x - 3}px, ${mousePos.current.y - 3}px, 0)`;
@@ -97,57 +97,56 @@ export function CustomCursor() {
   const isInteract = reticleMode === "interact";
 
   return (
-    <div className="hidden md:block pointer-events-none fixed inset-0 z-50 overflow-hidden select-none">
+    <div className="hidden md:block pointer-events-none fixed inset-0 z-50 overflow-hidden select-none font-sans">
       {/* Central Micro Dot */}
       <div
         ref={dotRef}
         className={`absolute top-0 left-0 w-1.5 h-1.5 rounded-full transition-colors duration-150 ${
           isInteract
-            ? "bg-ion-amber scale-150 shadow-[0_0_8px_rgba(229,169,60,0.9)]"
+            ? "bg-amber-glow scale-150"
             : isFocus
-            ? "bg-ion-cyan scale-125 shadow-[0_0_8px_rgba(40,240,220,0.9)]"
-            : pointer.isDown
-            ? "bg-ion-amber scale-150"
+            ? "bg-ion-cyan scale-125"
+            : isPointerDown
+            ? "bg-amber-glow scale-150"
             : isHovered
             ? "bg-ion-cyan"
             : "bg-void-100"
         }`}
       />
 
-      {/* Trailing Reticle Ring & Crosshair Brackets */}
+      {/* Trailing Reticle Ring */}
       <div
         ref={ringRef}
-        className={`absolute top-0 left-0 rounded-full border transition-all duration-200 ease-out flex items-center justify-center ${
+        className={`absolute top-0 left-0 rounded-full ring-1 transition-colors duration-200 ease-out flex items-center justify-center ${
           isInteract
-            ? "w-14 h-14 border-ion-amber border-2 animate-pulse shadow-[0_0_15px_rgba(229,169,60,0.5)]"
+            ? "w-12 h-12 ring-amber-glow"
             : isFocus
-            ? "w-14 h-14 border-ion-cyan border-dashed animate-spin shadow-[0_0_15px_rgba(40,240,220,0.4)]"
+            ? "w-12 h-12 ring-ion-cyan"
             : isHovered
-            ? "w-12 h-12 border-ion-cyan/80 border-dashed animate-spin"
-            : pointer.isDown
-            ? "w-8 h-8 border-ion-amber/90 scale-90"
-            : "w-8 h-8 border-void-400/40"
+            ? "w-12 h-12 ring-ion-cyan/80"
+            : isPointerDown
+            ? "w-8 h-8 ring-amber-glow/90 scale-90"
+            : "w-8 h-8 ring-void-400/40"
         }`}
       >
-        {isFocus && (
-          <span className="absolute -top-4 text-[8px] font-mono tracking-widest text-ion-cyan uppercase bg-void-950/80 px-1 py-0.2 rounded border border-ion-cyan/30">
-            {focusedObjectId?.toUpperCase() || "TARGET"}
+        {isFocus ? (
+          <span className="absolute -top-5 text-[10px] font-medium text-ion-cyan bg-void-900 px-2 py-0.5 rounded-full whitespace-nowrap">
+            {focusedObjectId || "Target"}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Radiating Shockwave Impulse Ripple */}
-      {rippleActive && (
+      {rippleActive ? (
         <div
-          className="absolute top-0 left-0 rounded-full border border-ion-amber/80 pointer-events-none animate-ping"
+          className="absolute top-0 left-0 rounded-full ring-1 ring-amber-glow/80 pointer-events-none transition-opacity duration-300"
           style={{
-            transform: `translate3d(${ripplePos.current.x - 28}px, ${ripplePos.current.y - 28}px, 0)`,
-            width: "56px",
-            height: "56px",
-            animationDuration: "0.45s",
+            transform: `translate3d(${ripplePos.current.x - 24}px, ${ripplePos.current.y - 24}px, 0)`,
+            width: "48px",
+            height: "48px",
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 }

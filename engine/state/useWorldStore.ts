@@ -21,6 +21,7 @@ export interface WorldState {
   isOpeningComplete: boolean;
   hasInteracted: boolean;
   showTelemetry: boolean;
+  hudCollapsed: boolean;
   postProcessingEnabled: boolean;
 
   // Spatial Exploration State
@@ -123,6 +124,7 @@ export interface WorldState {
     completeOpening: () => void;
     setHasInteracted: () => void;
     toggleTelemetry: () => void;
+    toggleHudCollapsed: (force?: boolean) => void;
     updatePointer: (coords: Partial<WorldState["pointer"]>) => void;
     setPointerVelocity: (velocity: { vx: number; vy: number; speed: number }) => void;
     setGyro: (gyro: Partial<WorldState["gyro"]>) => void;
@@ -158,13 +160,14 @@ export const useWorldStore = create<WorldState>((set, get) => ({
   adaptiveQuality: true,
   reducedMotion: false,
   postProcessingEnabled: true,
-  screenReaderAnnouncement: "VOID Engine Initialized. Realm 01: ORIGIN.",
+  screenReaderAnnouncement: "VOID Engine Initialized. Origin Realm.",
   isLiteFallback: false,
   audioEnabled: false,
   audioVolume: 0.7,
   isOpeningComplete: false,
   hasInteracted: false,
-  showTelemetry: true,
+  showTelemetry: false,
+  hudCollapsed: false,
 
   // Spatial Exploration State
   playerPosition: [0, 0, 7.5],
@@ -274,6 +277,10 @@ export const useWorldStore = create<WorldState>((set, get) => ({
     completeOpening: () => set({ isOpeningComplete: true, hasInteracted: true }),
     setHasInteracted: () => set({ hasInteracted: true }),
     toggleTelemetry: () => set((state) => ({ showTelemetry: !state.showTelemetry })),
+    toggleHudCollapsed: (force) =>
+      set((state) => ({
+        hudCollapsed: force !== undefined ? force : !state.hudCollapsed,
+      })),
     updatePointer: (coords) =>
       set((state) => ({
         pointer: { ...state.pointer, ...coords },

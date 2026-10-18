@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 interface SpatialLabelProps {
@@ -11,6 +11,9 @@ interface SpatialLabelProps {
   color?: string;
   distanceFade?: [number, number]; // [minDist, maxDist]
 }
+
+// Pre-allocated vector to avoid per-frame GC allocations in useFrame
+const _worldPos = new THREE.Vector3();
 
 /**
  * VOID Procedural Spatial Label
@@ -24,10 +27,11 @@ export function SpatialLabel({
   color = "#28f0dc",
   distanceFade = [2.0, 18.0],
 }: SpatialLabelProps) {
+  const { gl } = useThree();
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
 
-  // Procedurally generate crisp 512x128 canvas texture
+  // Procedurally generate crisp 512x128 canvas texture with sRGB color space & max anisotropy
   const texture = useMemo(() => {
     if (typeof document === "undefined") return null;
 
@@ -56,7 +60,7 @@ export function SpatialLabel({
     ctx.fillRect(504, 108, 4, 16);
 
     // Main Header Text
-    ctx.font = "bold 44px 'Courier New', monospace";
+    ctx.font = "bold 40px sans-serif";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -66,16 +70,18 @@ export function SpatialLabel({
 
     // Subtext
     if (subtext) {
-      ctx.font = "18px 'Courier New', monospace";
+      ctx.font = "600 18px sans-serif";
       ctx.fillStyle = color;
       ctx.shadowBlur = 6;
       ctx.fillText(subtext.toUpperCase(), 256, 92);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = gl.capabilities.getMaxAnisotropy();
     tex.needsUpdate = true;
     return tex;
-  }, [text, subtext, color]);
+  }, [text, subtext, color, gl]);
 
   useFrame(({ camera }) => {
     if (!meshRef.current || !materialRef.current) return;
@@ -83,9 +89,9 @@ export function SpatialLabel({
     // Billboard lookAt camera
     meshRef.current.quaternion.copy(camera.quaternion);
 
-    // Distance-based alpha fade
-    const worldPos = new THREE.Vector3(...position);
-    const dist = camera.position.distanceTo(worldPos);
+    // Distance-based alpha fade using pre-allocated vector
+    _worldPos.set(position[0], position[1], position[2]);
+    const dist = camera.position.distanceTo(_worldPos);
     const alpha = THREE.MathUtils.smoothstep(dist, distanceFade[1], distanceFade[0]);
     materialRef.current.opacity = alpha * 0.92;
   });

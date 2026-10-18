@@ -2,8 +2,9 @@
 
 import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useWorldStore } from "@/engine/state/useWorldStore";
+import { useWorldStore, RealmId } from "@/engine/state/useWorldStore";
 import { audioEngine } from "@/engine/audio/AudioSynthesizer";
+import { transitionManager } from "@/engine/transition/TransitionManager";
 import { TelemetryHUD } from "@/components/ui/TelemetryHUD";
 import { Navigation } from "@/components/ui/Navigation";
 import { AudioToggle } from "@/components/ui/AudioToggle";
@@ -18,8 +19,7 @@ const SceneView = dynamic(
   { ssr: false }
 );
 
-import { transitionManager } from "@/engine/transition/TransitionManager";
-import { RealmId } from "@/engine/state/useWorldStore";
+const REALMS_ORDER: RealmId[] = ["origin", "forest", "ocean", "machine", "void"];
 
 export default function VoidExperience() {
   const currentRealm = useWorldStore((s) => s.currentRealm);
@@ -30,6 +30,7 @@ export default function VoidExperience() {
   const audioVolume = useWorldStore((s) => s.audioVolume);
   const setSeed = useWorldStore((s) => s.actions.setSeed);
   const setRealm = useWorldStore((s) => s.actions.setRealm);
+  const toggleHudCollapsed = useWorldStore((s) => s.actions.toggleHudCollapsed);
 
   const screenReaderAnnouncement = useWorldStore((s) => s.screenReaderAnnouncement);
   const setReducedMotion = useWorldStore((s) => s.actions.setReducedMotion);
@@ -60,7 +61,7 @@ export default function VoidExperience() {
       const parsedSeed = parseInt(urlSeed, 10);
       if (!isNaN(parsedSeed)) setSeed(parsedSeed);
     }
-    if (urlRealm && ["origin", "forest", "ocean", "machine", "void"].includes(urlRealm)) {
+    if (urlRealm && REALMS_ORDER.includes(urlRealm as RealmId)) {
       setRealm(urlRealm as RealmId);
     }
   }, [setSeed, setRealm]);
@@ -76,10 +77,7 @@ export default function VoidExperience() {
 
   // Keyboard navigation & accessibility shortcut listeners
   useEffect(() => {
-    const realmsOrder: RealmId[] = ["origin", "forest", "ocean", "machine", "void"];
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore keystrokes when typing into input fields
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
@@ -89,6 +87,8 @@ export default function VoidExperience() {
         const nextState = !store.audioEnabled;
         toggleAudio(nextState);
         audioEngine.setMuted(!nextState, audioVolume);
+      } else if (e.key === "h" || e.key === "H") {
+        toggleHudCollapsed();
       } else if (e.key === "l" || e.key === "L") {
         toggleLiteFallback();
       } else if (e.key === "1") {
@@ -102,13 +102,13 @@ export default function VoidExperience() {
       } else if (e.key === "5") {
         transitionManager.transitionTo("void");
       } else if (e.key === "ArrowRight") {
-        const currIndex = realmsOrder.indexOf(currentRealm);
-        const nextIndex = (currIndex + 1) % realmsOrder.length;
-        transitionManager.transitionTo(realmsOrder[nextIndex]);
+        const currIndex = REALMS_ORDER.indexOf(currentRealm);
+        const nextIndex = (currIndex + 1) % REALMS_ORDER.length;
+        transitionManager.transitionTo(REALMS_ORDER[nextIndex]);
       } else if (e.key === "ArrowLeft") {
-        const currIndex = realmsOrder.indexOf(currentRealm);
-        const prevIndex = (currIndex - 1 + realmsOrder.length) % realmsOrder.length;
-        transitionManager.transitionTo(realmsOrder[prevIndex]);
+        const currIndex = REALMS_ORDER.indexOf(currentRealm);
+        const prevIndex = (currIndex - 1 + REALMS_ORDER.length) % REALMS_ORDER.length;
+        transitionManager.transitionTo(REALMS_ORDER[prevIndex]);
       } else if (e.code === "Space") {
         e.preventDefault();
         triggerShockwave([0, 0, 0], 28.0);
@@ -130,10 +130,10 @@ export default function VoidExperience() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleAudio, toggleLiteFallback, audioVolume, currentRealm, triggerShockwave, setSeed, announce]);
+  }, [toggleAudio, toggleHudCollapsed, toggleLiteFallback, audioVolume, currentRealm, triggerShockwave, setSeed, announce]);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-void-950 font-sans">
+    <main className="relative w-screen h-[100dvh] overflow-hidden bg-void-950 font-sans">
       {/* Screen Reader ARIA-Live Announcement Region for Realm Changes & State Events */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {screenReaderAnnouncement}
@@ -142,7 +142,7 @@ export default function VoidExperience() {
       {/* Accessible Screen Reader Skip Link */}
       <a
         href="#cosmic-viewport"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-void-900 focus:text-amber-glow focus:border focus:border-amber-glow focus:rounded-md focus:font-mono focus:text-xs"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-void-800 focus:text-amber-glow focus:rounded-md focus:font-sans focus:text-xs"
       >
         Skip to Cosmic Canvas
       </a>
@@ -150,24 +150,6 @@ export default function VoidExperience() {
       {/* 3D WebGL Scene or 2D VOID LITE Fallback */}
       <div id="cosmic-viewport" className="w-full h-full">
         {isLiteFallback ? <VoidLite /> : <SceneView />}
-      </div>
-
-      {/* Subtle CRT Scanline atmospheric texture */}
-      <div className="scanline-overlay absolute inset-0 pointer-events-none z-10 opacity-60" />
-
-      {/* Central Identity & Philosophy Watermark */}
-      <div className="absolute top-1/2 left-8 -translate-y-1/2 pointer-events-none z-10 hidden xl:flex flex-col gap-1 font-mono text-[10px] text-void-500/40 select-none">
-        <div>MATRICES: PROCEDURAL GEOMETRY</div>
-        <div>ALGORITHM: GOLDEN RATIO GEODESICS</div>
-        <div>PHYSICS: DIVERGENCE-FREE CURL FIELDS</div>
-        <div>ASSETS: 0.00 KB LOADED</div>
-      </div>
-
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 pointer-events-none z-10 hidden xl:flex flex-col items-end gap-1 font-mono text-[10px] text-void-500/40 select-none text-right">
-        <div>COSMOS: VOID ENGINE V1.0</div>
-        <div>KERNEL: THREE.JS + GLSL</div>
-        <div>AUDIO: WEBAUDIO HARMONIC DRIFT</div>
-        <div>STATUS: SYNCHRONIZED</div>
       </div>
 
       {/* Interactive HUD Elements */}

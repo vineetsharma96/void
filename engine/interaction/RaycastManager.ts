@@ -2,6 +2,10 @@ import * as THREE from "three";
 import { worldEngine } from "../world/WorldEngine";
 import { useWorldStore } from "../state/useWorldStore";
 
+// Pre-allocated math objects to avoid per-frame garbage collection in the render loop
+const _sphere = new THREE.Sphere();
+const _intersectionPoint = new THREE.Vector3();
+
 /**
  * VOID Spatial Raycast Manager
  * Throttled, high-performance raycaster testing against registered procedural interactive objects.
@@ -37,12 +41,10 @@ export class RaycastManager {
     let closestObject: { id: string; distance: number } | null = null;
 
     for (const obj of objects) {
-      // Bounding sphere intersection test against ray
-      const sphere = new THREE.Sphere(obj.position, obj.radius);
-      const intersectionPoint = new THREE.Vector3();
+      _sphere.set(obj.position, obj.radius);
 
-      if (this.raycaster.ray.intersectSphere(sphere, intersectionPoint)) {
-        const dist = this.raycaster.ray.origin.distanceTo(intersectionPoint);
+      if (this.raycaster.ray.intersectSphere(_sphere, _intersectionPoint)) {
+        const dist = this.raycaster.ray.origin.distanceTo(_intersectionPoint);
         if (!closestObject || dist < closestObject.distance) {
           closestObject = { id: obj.id, distance: dist };
         }

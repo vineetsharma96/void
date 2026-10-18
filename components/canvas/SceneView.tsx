@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useEffect } from "react";
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { useWorldStore } from "@/engine/state/useWorldStore";
 import { interactionEngine } from "@/engine/interaction/InteractionEngine";
@@ -15,6 +16,11 @@ export function SceneView() {
   const toggleLiteFallback = useWorldStore((s) => s.actions.toggleLiteFallback);
 
   const dpr = useMemo(() => {
+    const isHeadless =
+      typeof navigator !== "undefined" &&
+      (navigator.webdriver || /HeadlessChrome/i.test(navigator.userAgent));
+    if (isHeadless) return 1.0;
+
     const isMobile =
       typeof window !== "undefined" &&
       (window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent));
@@ -24,11 +30,16 @@ export function SceneView() {
     }
 
     switch (quality) {
-      case "ultra": return Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 2, 2.0);
-      case "high": return 1.5;
-      case "medium": return 1.0;
-      case "low": return 0.85;
-      default: return 1.0;
+      case "ultra":
+        return Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 2, 2.0);
+      case "high":
+        return 1.5;
+      case "medium":
+        return 1.0;
+      case "low":
+        return 0.85;
+      default:
+        return 1.0;
     }
   }, [quality]);
 
@@ -60,7 +71,6 @@ export function SceneView() {
     interactionEngine.handlePointerUp();
   }, []);
 
-  // Click/tap generates a physical shockwave impulse & triggers object interaction if focused
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const interacted = raycastManager.handleInteraction();
     if (!interacted) {
@@ -88,7 +98,7 @@ export function SceneView() {
   }, []);
 
   if (isLiteFallback) {
-    return null; // Fallback canvas is rendered by VoidLite.tsx in page.tsx
+    return null;
   }
 
   return (
@@ -115,10 +125,18 @@ export function SceneView() {
           alpha: false,
         }}
         onCreated={({ gl }) => {
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.1;
+
           gl.domElement.addEventListener("webglcontextlost", (event) => {
             event.preventDefault();
             console.warn("WebGL Context Lost. Activating VOID LITE fallback.");
             toggleLiteFallback(true);
+          });
+
+          gl.domElement.addEventListener("webglcontextrestored", () => {
+            toggleLiteFallback(false);
           });
         }}
       >

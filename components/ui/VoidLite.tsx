@@ -362,20 +362,22 @@ export function VoidLite() {
       />
 
       {/* VOID LITE Information Badge */}
-      <div className="absolute top-20 left-6 z-20 pointer-events-auto bg-void-950/80 border border-void-700/80 backdrop-blur-md p-3 rounded text-[11px] font-mono text-void-300 max-w-xs shadow-xl">
-        <div className="text-amber-glow font-bold tracking-wider mb-1 flex items-center justify-between">
-          <span>// VOID LITE ACTIVE</span>
-          <button
-            onClick={() => toggleLiteFallback(false)}
-            className="text-void-400 hover:text-ion-cyan border border-void-700 px-1.5 py-0.5 text-[9px] rounded transition-colors focus-visible:ring-2 focus-visible:ring-amber-glow focus-visible:outline-none"
-            aria-label="Switch from 2D Canvas fallback to 3D WebGL experience"
-          >
-            SWITCH TO 3D
-          </button>
+      <div className="absolute top-16 left-5 z-20 pointer-events-auto bg-void-900/95 p-1.5 rounded-[1.25rem] max-w-xs font-sans text-xs text-void-300">
+        <div className="bg-void-850 rounded-[calc(1.25rem-0.375rem)] p-3">
+          <div className="text-amber-glow font-semibold mb-1.5 flex items-center justify-between gap-2">
+            <span>Void Lite · 2D Canvas</span>
+            <button
+              onClick={() => toggleLiteFallback(false)}
+              className="text-void-200 hover:text-ion-cyan bg-void-900 hover:bg-void-800 px-2.5 py-1 text-xs font-medium rounded-full transition-colors duration-200 active:scale-[0.98] whitespace-nowrap shrink-0 focus-visible:ring-2 focus-visible:ring-amber-glow focus-visible:outline-none"
+              aria-label="Switch from 2D Canvas fallback to 3D WebGL experience"
+            >
+              Switch to 3D
+            </button>
+          </div>
+          <p className="text-void-400 leading-relaxed text-xs">
+            Rendering via high-precision 2D Canvas mathematics and parametric harmonic oscillators.
+          </p>
         </div>
-        <p className="text-void-400 leading-relaxed text-[10px]">
-          Rendering via high-precision 2D Canvas mathematics and parametric harmonic oscillators. Zero 3D models.
-        </p>
       </div>
     </div>
   );

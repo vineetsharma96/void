@@ -33,9 +33,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
-        sans: ["var(--font-sans)", "Inter", "sans-serif"],
-        display: ["var(--font-display)", "Outfit", "Syne", "sans-serif"],
+        sans: ["var(--font-sans)", "DM Sans", "sans-serif"],
+        display: ["var(--font-display)", "Bricolage Grotesque", "Syne", "sans-serif"],
       },
       keyframes: {
         pulseSlow: {

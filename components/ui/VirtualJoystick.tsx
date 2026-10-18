@@ -12,7 +12,7 @@ export function VirtualJoystick() {
   const [isActive, setIsActive] = useState(false);
   const touchIdRef = useRef<number | null>(null);
 
-  const radius = 42; // Max pixel displacement
+  const radius = 42;
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent<HTMLDivElement>) => {
@@ -95,7 +95,6 @@ export function VirtualJoystick() {
     [setMoveInput]
   );
 
-  // Auto-reset if mode switches away from explore
   useEffect(() => {
     if (cameraMode !== "explore") {
       setKnobPos({ x: 0, y: 0 });
@@ -109,8 +108,8 @@ export function VirtualJoystick() {
   return (
     <div
       ref={containerRef}
-      className={`fixed bottom-24 left-5 z-40 w-24 h-24 rounded-full border border-void-700/60 bg-void-950/70 backdrop-blur-md flex items-center justify-center pointer-events-auto touch-none select-none transition-opacity duration-300 md:hidden ${
-        isActive ? "opacity-95 ring-2 ring-ion-cyan/40" : "opacity-65"
+      className={`fixed bottom-24 left-5 z-40 w-24 h-24 rounded-full bg-void-900/90 flex items-center justify-center pointer-events-auto touch-none select-none transition-opacity duration-300 md:hidden ${
+        isActive ? "opacity-95 ring-2 ring-ion-cyan/40" : "opacity-70"
       }`}
       onPointerDown={(e) => e.stopPropagation()}
       onPointerMove={(e) => e.stopPropagation()}
@@ -123,12 +122,12 @@ export function VirtualJoystick() {
       onTouchCancel={handleTouchEnd}
       aria-label="Virtual Movement Joystick"
     >
-      {/* Joystick Center Crosshair */}
-      <div className="absolute w-8 h-8 rounded-full border border-void-800/80 pointer-events-none" />
+      {/* Joystick Center Ring */}
+      <div className="absolute w-10 h-10 rounded-full bg-void-800 pointer-events-none" />
 
       {/* Dynamic Thumb Knob */}
       <div
-        className="w-10 h-10 rounded-full bg-gradient-to-br from-ion-cyan/70 to-void-700/80 border border-ion-cyan/80 shadow-[0_0_12px_rgba(40,240,220,0.35)] pointer-events-none transition-transform duration-75 ease-out"
+        className="w-10 h-10 rounded-full bg-ion-cyan pointer-events-none transition-transform duration-75 ease-out"
         style={{
           transform: `translate3d(${knobPos.x}px, ${knobPos.y}px, 0)`,
         }}

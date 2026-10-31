@@ -5,6 +5,7 @@ import { useWorldStore, RealmId, CameraMode } from "@/engine/state/useWorldStore
 import { audioEngine } from "@/engine/audio/AudioSynthesizer";
 import { Compass, Eye, Video, Footprints, ChevronDown, ChevronUp } from "lucide-react";
 import { transitionManager } from "@/engine/transition/TransitionManager";
+import { cn } from "@/lib/utils";
 
 interface RealmItem {
   id: RealmId;
@@ -18,6 +19,12 @@ const REALMS: RealmItem[] = [
   { id: "machine", label: "Machine" },
   { id: "void", label: "Void" },
 ];
+
+const toggleBtnClasses = "pointer-events-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-void-900/90 hover:bg-void-800 text-void-300 hover:text-void-100 text-xs font-medium transition-colors duration-200 active:scale-[0.98] whitespace-nowrap shrink-0 focus-visible:ring-2 focus-visible:ring-ion-cyan focus-visible:outline-none";
+
+const realmBtnBaseClasses = "relative px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-colors duration-200 flex items-center gap-2 shrink-0 whitespace-nowrap active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ion-cyan focus-visible:outline-none";
+
+const cameraBtnBaseClasses = "px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-ion-cyan focus-visible:outline-none";
 
 export function Navigation() {
   const currentRealm = useWorldStore((s) => s.currentRealm);
@@ -56,7 +63,7 @@ export function Navigation() {
         }}
         aria-expanded={!hudCollapsed}
         aria-label={hudCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}
-        className="pointer-events-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-void-900/90 hover:bg-void-800 text-void-300 hover:text-void-100 text-xs font-medium transition-colors duration-200 active:scale-[0.98] whitespace-nowrap shrink-0 focus-visible:ring-2 focus-visible:ring-ion-cyan focus-visible:outline-none"
+        className={toggleBtnClasses}
       >
         {hudCollapsed ? (
           <>
@@ -73,11 +80,12 @@ export function Navigation() {
 
       {/* Collapsible Dock Container */}
       <div
-        className={`flex flex-col items-center gap-1.5 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={cn(
+          "flex flex-col items-center gap-1.5 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
           hudCollapsed
             ? "translate-y-32 opacity-0 pointer-events-none h-0 overflow-hidden"
             : "translate-y-0 opacity-100"
-        }`}
+        )}
       >
         {/* Double-Bezel Realm Selection Dock */}
         <div
@@ -96,13 +104,14 @@ export function Navigation() {
                 aria-selected={isActive}
                 aria-label={`Enter ${realm.label} Realm`}
                 onClick={() => handleRealmClick(realm.id)}
-                className={`relative px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-colors duration-200 flex items-center gap-2 shrink-0 whitespace-nowrap active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ion-cyan focus-visible:outline-none ${
+                className={cn(
+                  realmBtnBaseClasses,
                   isActive
                     ? "bg-void-800 text-ion-cyan font-semibold"
                     : isTarget
                     ? "bg-void-850 text-amber-glow"
                     : "text-void-300 hover:text-void-100 hover:bg-void-850"
-                }`}
+                )}
               >
                 <span>{realm.label}</span>
                 {isActive ? (
@@ -124,11 +133,12 @@ export function Navigation() {
               onClick={() => handleCameraMode("explore")}
               aria-pressed={cameraMode === "explore"}
               aria-label="Switch to Free Explore Camera"
-              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-ion-cyan focus-visible:outline-none ${
+              className={cn(
+                cameraBtnBaseClasses,
                 cameraMode === "explore"
                   ? "bg-void-800 text-ion-cyan font-semibold"
                   : "hover:text-void-100 hover:bg-void-850"
-              }`}
+              )}
             >
               <Footprints className="w-3 h-3" />
               <span>Explore</span>
@@ -137,11 +147,12 @@ export function Navigation() {
               onClick={() => handleCameraMode("orbit")}
               aria-pressed={cameraMode === "orbit"}
               aria-label="Switch to Orbit Camera"
-              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-ion-cyan focus-visible:outline-none ${
+              className={cn(
+                cameraBtnBaseClasses,
                 cameraMode === "orbit"
                   ? "bg-void-800 text-ion-cyan font-semibold"
                   : "hover:text-void-100 hover:bg-void-850"
-              }`}
+              )}
             >
               <Compass className="w-3 h-3" />
               <span>Orbit</span>
@@ -150,11 +161,12 @@ export function Navigation() {
               onClick={() => handleCameraMode("cinematic")}
               aria-pressed={cameraMode === "cinematic"}
               aria-label="Switch to Cinematic Camera"
-              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-ion-cyan focus-visible:outline-none ${
+              className={cn(
+                cameraBtnBaseClasses,
                 cameraMode === "cinematic"
                   ? "bg-void-800 text-ion-cyan font-semibold"
                   : "hover:text-void-100 hover:bg-void-850"
-              }`}
+              )}
             >
               <Video className="w-3 h-3" />
               <span>Cinematic</span>
@@ -163,11 +175,12 @@ export function Navigation() {
               onClick={() => handleCameraMode("inspect")}
               aria-pressed={cameraMode === "inspect"}
               aria-label="Switch to Inspect Camera"
-              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-ion-cyan focus-visible:outline-none ${
+              className={cn(
+                cameraBtnBaseClasses,
                 cameraMode === "inspect"
                   ? "bg-void-800 text-ion-cyan font-semibold"
                   : "hover:text-void-100 hover:bg-void-850"
-              }`}
+              )}
             >
               <Eye className="w-3 h-3" />
               <span>Inspect</span>

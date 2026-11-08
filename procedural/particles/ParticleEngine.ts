@@ -15,7 +15,7 @@ export interface ParticleSystemOptions {
   seed: number;
 }
 
-export const genericParticleVertexShader = /* glsl */ `
+const genericParticleVertexShader = /* glsl */ `
 ${noise3DGLSL}
 
 uniform float uTime;
@@ -101,7 +101,7 @@ void main() {
 }
 `;
 
-export const genericParticleFragmentShader = /* glsl */ `
+const genericParticleFragmentShader = /* glsl */ `
 varying float vAlpha;
 varying vec3 vColor;
 

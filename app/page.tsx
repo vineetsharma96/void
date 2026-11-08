@@ -115,7 +115,9 @@ export default function VoidExperience() {
         audioEngine.triggerShockwaveImpulse(1.5);
         announce("Procedural shockwave detonated.");
       } else if (e.key === "r" || e.key === "R") {
-        const newSeed = Math.floor(Math.random() * 900000) + 100000;
+        const array = new Uint32Array(1);
+        window.crypto.getRandomValues(array);
+        const newSeed = 100000 + (array[0] % 900000);
         setSeed(newSeed);
         audioEngine.triggerDataRegenArpeggio();
         announce(`Cosmic seed regenerated to ${newSeed}`);
